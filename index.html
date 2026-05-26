@@ -160,7 +160,7 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-      <button class="btn btn-sec" onclick="showConfig()" style="font-size:12px;padding:6px 12px;">⚙ SharePoint</button>
+      
       <div class="header-meta">MBL-F-27 | Rev. 06<br>2025-12-08</div>
     </div>
   </div>
@@ -736,26 +736,7 @@
 </div><!-- /form-body -->
 
 <!-- Config modal -->
-<div class="modal-bg" id="configModal">
-  <div class="modal">
-    <h2>Power Automate konfigūracija</h2>
-    <p>Įveskite Power Automate HTTP trigger URL. Jis bus išsaugotas naršyklėje.<br><br>
-    Kaip gauti URL:<br>
-    1. Power Automate → New flow → Instant cloud flow<br>
-    2. Trigger: <strong>"When an HTTP request is received"</strong><br>
-    3. Nukopijuokite HTTP POST URL iš trigger bloko<br>
-    4. Pridėkite veiksmus: "Create item" → NDT_Requests<br>
-    &nbsp;&nbsp;&nbsp;ir "Apply to each" TestLines → "Create item" → TestLines sąrašas</p>
-    <div class="field" style="margin-top:12px;">
-      <label>Power Automate HTTP Flow URL</label>
-      <input type="text" id="cfg_flow" placeholder="https://prod-xx.westeurope.logic.azure.com/workflows/...">
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-sec" onclick="closeConfig()">Atšaukti</button>
-      <button class="btn btn-pri" onclick="saveConfig()">Išsaugoti</button>
-    </div>
-  </div>
-</div>
+
 
 <div class="toast" id="toast"></div>
 
@@ -763,17 +744,8 @@
 // Config
 let flowUrl = 'https://970e788dfa91e4068cfc63a7a3afe7.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/98f47041e6ae44beaaee978915e35fae/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jzzlkAr34XII3Bn27a7sYJEkKBNjMzEzLR9mggF68Bk';
 
-function showConfig(){
-  document.getElementById('cfg_flow').value = flowUrl;
-  document.getElementById('configModal').classList.add('show');
-}
-function closeConfig(){ document.getElementById('configModal').classList.remove('show'); }
-function saveConfig(){
-  flowUrl = document.getElementById('cfg_flow').value.trim();
-  localStorage.setItem('flow_url', flowUrl);
-  closeConfig();
-  showToast('Konfigūracija išsaugota ✓','success');
-}
+
+
 
 // Toast
 function showToast(msg, type='success'){
@@ -900,7 +872,7 @@ async function submitForm(){
   });
   if(!valid){ document.querySelector('[required][style*="red"]')?.scrollIntoView({behavior:'smooth',block:'center'}); showToast('Užpildykite privalomus laukus','error'); return; }
 
-  if(!flowUrl){ showConfig(); showToast('Pirmiausia įveskite Flow URL','error'); return; }
+
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;

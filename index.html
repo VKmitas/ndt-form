@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Darbų Paraiška – MBL</title>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.10.0/lib/msal-browser.min.js"></script>
 <style>
   :root {
     --blue:#1a3a5c;--blue-mid:#2d5f8a;--blue-light:#e8f0f7;--blue-accent:#3d7ab5;
@@ -127,16 +128,24 @@
   .toast.success{background:var(--green);}
   .toast.error{background:var(--red);}
 
-  /* Config modal */
-  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;}
-  .modal-bg.show{display:flex;}
-  .modal{background:#fff;border-radius:10px;padding:28px 32px;max-width:480px;width:90%;}
-  .modal h2{font-size:17px;margin-bottom:6px;color:var(--blue);}
-  .modal p{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5;}
-  .modal .field{margin-bottom:12px;}
-  .modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;}
 
-  @media(max-width:680px){
+
+  /* Login overlay */
+  .login-overlay{position:fixed;inset:0;background:var(--blue);z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;}
+  .login-overlay.hidden{display:none;}
+  .login-card{background:#fff;border-radius:12px;padding:40px 48px;text-align:center;max-width:380px;width:90%;}
+  .login-card .logo-mark{margin:0 auto 16px;width:48px;height:48px;font-size:16px;}
+  .login-card h2{font-size:18px;color:var(--blue);margin-bottom:6px;}
+  .login-card p{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+  .btn-ms{display:flex;align-items:center;gap:10px;background:#0078d4;color:#fff;border:none;border-radius:var(--radius);padding:11px 20px;font-size:14px;font-weight:500;cursor:pointer;width:100%;justify-content:center;font-family:var(--font);transition:background .15s;}
+  .btn-ms:hover{background:#006cbd;}
+  .btn-ms svg{flex-shrink:0;}
+  /* User badge in header */
+  .user-badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:20px;padding:5px 12px 5px 5px;}
+  .user-avatar{width:26px;height:26px;background:var(--blue-accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+  .user-name{font-size:12px;color:rgba(255,255,255,0.9);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .btn-logout{background:none;border:none;color:rgba(255,255,255,0.6);font-size:11px;cursor:pointer;padding:2px 4px;margin-left:4px;}
+  .btn-logout:hover{color:#fff;}
     .header-top,.header-title{padding:12px 16px;}
     .form-body{padding:0 12px;}
     .sec-body{padding:14px 14px;}
@@ -150,6 +159,19 @@
 </head>
 <body>
 
+<!-- Login overlay -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="logo-mark" style="background:#1a3a5c;color:#fff;display:flex;align-items:center;justify-content:center;border-radius:8px;">MBL</div>
+    <h2>Darbų Paraiška</h2>
+    <p>Prisijunkite su savo Iremas Microsoft paskyra, kad galėtumėte pateikti NDT paraišką.</p>
+    <button class="btn-ms" onclick="signIn()">
+      <svg width="20" height="20" viewBox="0 0 21 21" fill="none"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+      Prisijungti su Microsoft
+    </button>
+  </div>
+</div>
+
 <div class="page-header">
   <div class="header-top">
     <div class="logo-wrap">
@@ -160,7 +182,11 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-      
+      <div class="user-badge" id="userBadge" style="display:none;">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <span class="user-name" id="userName">...</span>
+        <button class="btn-logout" onclick="signOut()" title="Atsijungti">✕</button>
+      </div>
       <div class="header-meta">MBL-F-27 | Rev. 06<br>2025-12-08</div>
     </div>
   </div>
@@ -742,7 +768,7 @@
 
 <script>
 // Config
-let flowUrl = 'https://ndt.v-kmitas.workers.dev/';
+let flowUrl = 'https://970e788dfa91e4068cfc63a7a3afe7.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/98f47041e6ae44beaaee978915e35fae/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jzzlkAr34XII3Bn27a7sYJEkKBNjMzEzLR9mggF68Bk';
 
 
 
@@ -928,6 +954,8 @@ async function submitForm(){
     SignatureDate:       document.getElementById('f_date').value,
     Notes:               document.getElementById('f_notes').value,
     Status:              'Pateikta',
+    SubmittedBy:         window.currentUser?.name || '',
+    SubmittedByEmail:    window.currentUser?.email || '',
     // Test lines as structured array — Power Automate can loop and create separate SharePoint items
     TestLines: collectLinesArray()
   };
@@ -963,9 +991,50 @@ function clearForm(){
   updateProgress();
 }
 
+// MSAL config
+const msalConfig = {
+  auth: {
+    clientId: '18788fe0-90e8-4c79-8813-9f96ee80b6ab',
+    authority: 'https://login.microsoftonline.com/f300c84f-87f0-4d9e-8284-1e36dbe06fbe',
+    redirectUri: 'https://vkmitas.github.io/ndt-form/'
+  },
+  cache: { cacheLocation: 'sessionStorage' }
+};
+const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+async function initAuth() {
+  await msalInstance.initialize();
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length > 0) {
+    setUser(accounts[0]);
+  }
+}
+
+function setUser(account) {
+  window.currentUser = { name: account.name, email: account.username };
+  document.getElementById('loginOverlay').classList.add('hidden');
+  const initials = account.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('userAvatar').textContent = initials;
+  document.getElementById('userName').textContent = account.name;
+  document.getElementById('userBadge').style.display = 'flex';
+}
+
+async function signIn() {
+  try {
+    const resp = await msalInstance.loginPopup({ scopes: ['User.Read'] });
+    setUser(resp.account);
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function signOut() {
+  msalInstance.logoutPopup();
+}
+
 // Init
+initAuth();
 document.getElementById('f_date').value = new Date().toISOString().split('T')[0];
-if(spSite){ /* already configured */ }
 addLine();
 updateProgress();
 </script>

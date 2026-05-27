@@ -679,7 +679,7 @@ function showToast(msg, type='success') {
 // ── CONFIRMATION DIALOG ─────────────────────────────────
 let pendingAction = null;
 
-function confirm(opts) {
+function showConfirm(opts) {
   // opts: { icon, title, msg, detail, okLabel, okClass, action }
   document.getElementById('confirmIcon').textContent = opts.icon || '❓';
   document.getElementById('confirmTitle').textContent = opts.title || 'Ar tikrai?';
@@ -707,7 +707,7 @@ function confirmOk() {
 // Updated action wrappers with confirmations
 function confirmApprove(id) {
   const job = allJobs.find(j=>j.id===id);
-  confirm({
+  showConfirm({
     icon: '✅',
     title: 'Patvirtinti paraišką?',
     msg: 'Paraiška bus patvirtinta ir perduota priskyrimui. Pateikėjas bus informuotas el. paštu.',
@@ -720,7 +720,7 @@ function confirmApprove(id) {
 
 function confirmReject(id) {
   const job = allJobs.find(j=>j.id===id);
-  confirm({
+  showConfirm({
     icon: '✕',
     title: 'Atmesti paraišką?',
     msg: 'Paraiška bus atmesta. Pateikėjas bus informuotas el. paštu.',
@@ -736,7 +736,7 @@ function confirmAssign(id) {
   if (!engVal) { showToast('Pasirinkite inžinierių','error'); return; }
   const [name] = engVal.split('|');
   const job = allJobs.find(j=>j.id===id);
-  confirm({
+  showConfirm({
     icon: '👷',
     title: 'Priskirti inžinierių?',
     msg: `Darbas bus priskirtas: ${name}`,
@@ -749,7 +749,7 @@ function confirmAssign(id) {
 
 function confirmMarkDone(id) {
   const job = allJobs.find(j=>j.id===id);
-  confirm({
+  showConfirm({
     icon: '✅',
     title: 'Pažymėti kaip atliktą?',
     msg: 'Darbas bus pažymėtas kaip atliktas.',

@@ -134,6 +134,33 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 /* No permission banner */
 .no-perm{background:var(--amber-light);border:1px solid var(--amber);border-radius:8px;padding:12px 18px;margin:16px 32px 0;font-size:13px;color:var(--amber);display:none;}
+
+/* Tabs */
+.tabs{display:flex;gap:0;padding:0 32px;background:var(--white);border-bottom:1px solid var(--border);}
+.tab{font-family:var(--font);font-size:13px;font-weight:500;padding:12px 20px;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;}
+.tab:hover{color:var(--blue);}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600;}
+.tab-badge{background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:5px;}
+
+/* Tab panels */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* Approval card */
+.approval-card{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:box-shadow .15s;margin-bottom:10px;}
+.approval-card:hover{box-shadow:0 2px 12px rgba(26,58,92,0.08);}
+.approval-top{display:grid;grid-template-columns:100px 1fr auto auto;align-items:center;gap:16px;padding:14px 18px;}
+.approval-actions{display:flex;gap:8px;align-items:center;}
+.btn-approve{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 16px;border-radius:var(--radius);border:none;cursor:pointer;background:var(--green);color:#fff;transition:all .15s;}
+.btn-approve:hover{background:#166038;}
+.btn-reject{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 16px;border-radius:var(--radius);border:1px solid var(--red);cursor:pointer;background:var(--white);color:var(--red);transition:all .15s;}
+.btn-reject:hover{background:var(--red);color:#fff;}
+.approval-detail{border-top:1px solid var(--border);padding:14px 18px;background:#fafbfc;display:none;}
+.approval-card.expanded .approval-detail{display:block;}
+.approval-methods{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;}
+.comment-row{display:flex;gap:10px;margin-top:12px;}
+.comment-input{font-family:var(--font);font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);flex:1;color:var(--text);}
+.comment-input:focus{outline:none;border-color:var(--blue-accent);}
 </style>
 </head>
 <body>
@@ -174,47 +201,71 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </div>
 
 <div class="page-bar">
-  <div class="page-title">Darbų priskyrimas / Job Assignment</div>
+  <div class="page-title">Darbų valdymas / Works Management</div>
   <button class="btn-refresh" onclick="loadData()">↻ Atnaujinti</button>
 </div>
 
 <div class="no-perm" id="noPermBanner">
-  ⚠ Jūs galite tik peržiūrėti darbus. Priskirti darbus gali tik vadovai (CanAssign = Yes).
+  ⚠ Jūs galite tik peržiūrėti darbus. Priskirti/tvirtinti gali tik įgalioti darbuotojai.
 </div>
 
 <!-- Stats -->
 <div class="stats">
+  <div class="stat"><div class="stat-icon red">📋</div><div><div class="stat-val" id="statAwaitApproval">—</div><div class="stat-label">Laukia patvirtinimo</div></div></div>
   <div class="stat"><div class="stat-icon amber">⏳</div><div><div class="stat-val" id="statPending">—</div><div class="stat-label">Laukia priskyrimo</div></div></div>
   <div class="stat"><div class="stat-icon blue">👷</div><div><div class="stat-val" id="statAssigned">—</div><div class="stat-label">Priskirta</div></div></div>
   <div class="stat"><div class="stat-icon green">✅</div><div><div class="stat-val" id="statDone">—</div><div class="stat-label">Atlikta</div></div></div>
-  <div class="stat"><div class="stat-icon red">📋</div><div><div class="stat-val" id="statTotal">—</div><div class="stat-label">Iš viso</div></div></div>
 </div>
 
-<!-- Filters -->
-<div class="filters">
-  <button class="filter-btn active" onclick="filterJobs('all',this)">Visi <span class="filter-count" id="fc-all">0</span></button>
-  <button class="filter-btn" onclick="filterJobs('Patvirtinta',this)">Laukia priskyrimo <span class="filter-count" id="fc-Patvirtinta">0</span></button>
-  <button class="filter-btn" onclick="filterJobs('Priskirta',this)">Priskirta <span class="filter-count" id="fc-Priskirta">0</span></button>
-  <button class="filter-btn" onclick="filterJobs('Atlikta',this)">Atlikta <span class="filter-count" id="fc-Atlikta">0</span></button>
-  <div class="search-box">
-    <span class="search-icon">🔍</span>
-    <input type="text" placeholder="Ieškoti..." oninput="searchJobs(this.value)">
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('approvals',this)">✅ Tvirtinimas <span class="tab-badge" id="badge-approvals">0</span></button>
+  <button class="tab" onclick="switchTab('assignment',this)">👷 Priskyrimas <span class="tab-badge" style="background:var(--amber)" id="badge-assignment">0</span></button>
+</div>
+
+<!-- Approvals tab -->
+<div class="tab-panel active" id="tab-approvals">
+  <div class="filters">
+    <div class="search-box" style="margin-left:0">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Ieškoti..." oninput="searchApprovals(this.value)">
+    </div>
+  </div>
+  <div class="jobs" id="approvalsList">
+    <div class="loading"><div class="spinner-lg"></div>Kraunama...</div>
   </div>
 </div>
 
-<div class="jobs" id="jobsList">
-  <div class="loading"><div class="spinner-lg"></div>Kraunama...</div>
+<!-- Assignment tab -->
+<div class="tab-panel" id="tab-assignment">
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterJobs('all',this)">Visi <span class="filter-count" id="fc-all">0</span></button>
+    <button class="filter-btn" onclick="filterJobs('Patvirtinta',this)">Laukia priskyrimo <span class="filter-count" id="fc-Patvirtinta">0</span></button>
+    <button class="filter-btn" onclick="filterJobs('Priskirta',this)">Priskirta <span class="filter-count" id="fc-Priskirta">0</span></button>
+    <button class="filter-btn" onclick="filterJobs('Atlikta',this)">Atlikta <span class="filter-count" id="fc-Atlikta">0</span></button>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Ieškoti..." oninput="searchJobs(this.value)">
+    </div>
+  </div>
+  <div class="jobs" id="jobsList">
+    <div class="loading"><div class="spinner-lg"></div>Kraunama...</div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 // ── CONFIG ──────────────────────────────────────────────
-const CLIENT_ID   = '18788fe0-90e8-4c79-8813-9f96ee80b6ab';
-const TENANT_ID   = 'f300c84f-87f0-4d9e-8284-1e36dbe06fbe';
-const SP_SITE_URL = 'https://achemosgrupelt.sharepoint.com/sites/MBL';
-const WORKER_URL  = 'https://ndt.v-kmitas.workers.dev';
+const CLIENT_ID    = '18788fe0-90e8-4c79-8813-9f96ee80b6ab';
+const TENANT_ID    = 'f300c84f-87f0-4d9e-8284-1e36dbe06fbe';
+const SP_SITE_URL  = 'https://achemosgrupelt.sharepoint.com/sites/MBL';
+const WORKER_URL   = 'https://ndt.v-kmitas.workers.dev';
+const FLOW_APPROVE = 'https://970e788dfa91e4068cfc63a7a3afe7.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/da518a7a58144966a76316c862447da9/triggers/manual/paths/invoke?api-version=1';
 const SCOPES = ['User.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Read'];
+
+let canApprove = false;
+let approvalSearch = '';
 
 // ── MSAL ────────────────────────────────────────────────
 const msalInstance = new msal.PublicClientApplication({
@@ -297,14 +348,16 @@ async function loadData() {
       name: i.Title || '',
       email: i.field_1 || '',
       role: i.field_2 || '',
-      canAssign: i.field_3 === 'Yes' || i.field_3 === true
+      canAssign: i.field_3 === 'Yes' || i.field_3 === true,
+      canApprove: i.CanApprove === 'Yes' || i.CanApprove === true
     }));
 
-    // Check if current user can assign
+    // Check if current user can assign and/or approve
     const userEmail = currentUser.username.toLowerCase();
     const me = engineers.find(e => e.email?.toLowerCase() === userEmail);
     canAssign = me?.canAssign || false;
-    document.getElementById('noPermBanner').style.display = canAssign ? 'none' : 'block';
+    canApprove = me ? (me.canApprove || false) : false;
+    document.getElementById('noPermBanner').style.display = (canAssign || canApprove) ? 'none' : 'block';
 
     // Load NDT_Requests — select only needed columns
     const jobItems = await spGetList('NDT_Requests', '', 500);
@@ -331,6 +384,7 @@ async function loadData() {
     updateStats();
     updateFilterCounts();
     renderJobs();
+    renderApprovals();
   } catch(e) {
     document.getElementById('jobsList').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><h3>Klaida</h3><p>${e.message}</p></div>`;
     console.error(e);
@@ -473,12 +527,103 @@ function filterJobs(filter, btn) {
 }
 
 function searchJobs(val) { currentSearch = val; renderJobs(); }
+function searchApprovals(val) { approvalSearch = val; renderApprovals(); }
+
+// ── TABS ────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ── APPROVALS ───────────────────────────────────────────
+function renderApprovals() {
+  const list = document.getElementById('approvalsList');
+  let pending = allJobs.filter(j => j.status === 'Pateikta');
+  if (approvalSearch) {
+    const s = approvalSearch.toLowerCase();
+    pending = pending.filter(j => j.orderNo.toLowerCase().includes(s) || j.customer.toLowerCase().includes(s) || j.object.toLowerCase().includes(s));
+  }
+  if (!pending.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><h3>Nėra laukiančių patvirtinimo</h3><p>Visos paraiškos peržiūrėtos.</p></div>`;
+    return;
+  }
+  list.innerHTML = pending.map(job => `
+    <div class="approval-card" id="acard-${job.id}">
+      <div class="approval-top" onclick="toggleApproval('${job.id}')">
+        <div class="job-order">${job.orderNo}<br><span style="font-size:10px;color:var(--muted);font-weight:400">${job.shopNo}</span></div>
+        <div>
+          <div class="job-object">${job.object}</div>
+          <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;">Pateikė: ${job.submittedBy} · ${job.submitted}</div>
+        </div>
+        <div class="approval-actions">
+          ${canApprove ? `
+            <button class="btn-approve" onclick="event.stopPropagation();approveJob('${job.id}','approve')">✓ Patvirtinti</button>
+            <button class="btn-reject" onclick="event.stopPropagation();toggleApproval('${job.id}')">✕ Atmesti</button>
+          ` : `<span class="status Pateikta">📋 Pateikta</span>`}
+          <button class="btn-expand" onclick="event.stopPropagation();toggleApproval('${job.id}')">▾</button>
+        </div>
+      </div>
+      <div class="approval-detail" id="adetail-${job.id}">
+        <div class="details-grid">
+          <div><div class="detail-label">Užsakovas</div><div class="detail-value">${job.customer}</div></div>
+          <div><div class="detail-label">Objektas</div><div class="detail-value">${job.object}</div></div>
+          <div><div class="detail-label">Objekto vieta</div><div class="detail-value">${job.objectPlace}</div></div>
+          <div><div class="detail-label">Atsakingas</div><div class="detail-value">${job.responsible}</div></div>
+          <div><div class="detail-label">Pateikta</div><div class="detail-value">${job.submitted}</div></div>
+          <div><div class="detail-label">Pastabos</div><div class="detail-value">${job.notes || '—'}</div></div>
+        </div>
+        ${canApprove ? `
+        <div class="comment-row">
+          <input type="text" class="comment-input" id="comment-${job.id}" placeholder="Atmetimo priežastis / Rejection reason (nebūtina)...">
+          <button class="btn-reject" onclick="approveJob('${job.id}','reject')">✕ Atmesti su komentaru</button>
+        </div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function toggleApproval(id) {
+  const card = document.getElementById('acard-'+id);
+  const detail = document.getElementById('adetail-'+id);
+  card.classList.toggle('expanded');
+}
+
+async function approveJob(id, action) {
+  const job = allJobs.find(j=>j.id===id);
+  if (!job) return;
+  const comment = document.getElementById('comment-'+id)?.value || '';
+  showToast('Siunčiama...','info');
+  try {
+    const resp = await fetch(FLOW_APPROVE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        itemId: id,
+        action: action,
+        approvedBy: currentUser.username,
+        comment: comment,
+        submittedByEmail: job.submittedBy,
+        orderNo: job.orderNo,
+        objectId: job.object
+      })
+    });
+    if (!resp.ok && resp.status !== 202) throw new Error('Flow error: ' + resp.status);
+    job.status = action === 'approve' ? 'Patvirtinta' : 'Atmesta';
+    showToast(action === 'approve' ? '✓ Paraiška patvirtinta!' : '✕ Paraiška atmesta', action === 'approve' ? 'success' : 'error');
+    updateStats(); updateFilterCounts(); renderApprovals(); renderJobs();
+  } catch(e) { showToast('Klaida: '+e.message,'error'); }
+}
 
 function updateStats() {
+  const awaitApproval = allJobs.filter(j=>j.status==='Pateikta').length;
+  document.getElementById('statAwaitApproval').textContent = awaitApproval;
   document.getElementById('statPending').textContent = allJobs.filter(j=>j.status==='Patvirtinta').length;
   document.getElementById('statAssigned').textContent = allJobs.filter(j=>j.status==='Priskirta').length;
   document.getElementById('statDone').textContent = allJobs.filter(j=>j.status==='Atlikta').length;
-  document.getElementById('statTotal').textContent = allJobs.length;
+  document.getElementById('badge-approvals').textContent = awaitApproval;
+  document.getElementById('badge-assignment').textContent = allJobs.filter(j=>j.status==='Patvirtinta').length;
 }
 
 function updateFilterCounts() {

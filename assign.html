@@ -291,6 +291,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     <button class="filter-btn active" onclick="filterJobs('Patvirtinta',this)">Laukia priskyrimo <span class="filter-count" id="fc-Patvirtinta">0</span></button>
     <button class="filter-btn" onclick="filterJobs('Priskirta',this)">Priskirta <span class="filter-count" id="fc-Priskirta">0</span></button>
     <button class="filter-btn" onclick="filterJobs('mine',this)">Mano darbai <span class="filter-count" id="fc-mine">0</span></button>
+    <button class="filter-btn" onclick="filterJobs('mine_done',this)">Mano atlikti <span class="filter-count" id="fc-mine_done">0</span></button>
     <button class="filter-btn" onclick="filterJobs('Atlikta',this)">Atlikta <span class="filter-count" id="fc-Atlikta">0</span></button>
     <button class="filter-btn" onclick="filterJobs('all',this)">Visi <span class="filter-count" id="fc-all">0</span></button>
     <div class="search-box">
@@ -459,9 +460,14 @@ async function loadData() {
 // ── RENDER ───────────────────────────────────────────────
 function renderJobs() {
   const list = document.getElementById('jobsList');
+  const myEmail = currentUser?.username?.toLowerCase();
   let filtered = allJobs.filter(j => {
-    const matchFilter = currentFilter === 'all' || 
-      (currentFilter === 'mine' ? j.assignedToEmail?.toLowerCase() === currentUser?.username?.toLowerCase() : j.status === currentFilter);
+    const isMe = j.assignedToEmail?.toLowerCase() === myEmail;
+    let matchFilter = false;
+    if (currentFilter === 'all') matchFilter = true;
+    else if (currentFilter === 'mine') matchFilter = isMe && j.status === 'Priskirta';
+    else if (currentFilter === 'mine_done') matchFilter = isMe && j.status === 'Atlikta';
+    else matchFilter = j.status === currentFilter;
     const s = currentSearch.toLowerCase();
     const matchSearch = !s || j.orderNo.toLowerCase().includes(s) || j.customer.toLowerCase().includes(s) || j.object.toLowerCase().includes(s);
     return matchFilter && matchSearch;
@@ -666,11 +672,13 @@ function updateStats() {
 }
 
 function updateFilterCounts() {
+  const myEmail = currentUser?.username?.toLowerCase();
   document.getElementById('fc-all').textContent = allJobs.length;
   document.getElementById('fc-Patvirtinta').textContent = allJobs.filter(j=>j.status==='Patvirtinta').length;
   document.getElementById('fc-Priskirta').textContent = allJobs.filter(j=>j.status==='Priskirta').length;
   document.getElementById('fc-Atlikta').textContent = allJobs.filter(j=>j.status==='Atlikta').length;
-  document.getElementById('fc-mine').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase() === currentUser?.username?.toLowerCase()).length;
+  document.getElementById('fc-mine').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && j.status==='Priskirta').length;
+  document.getElementById('fc-mine_done').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && j.status==='Atlikta').length;
 }
 
 function showToast(msg, type='success') {

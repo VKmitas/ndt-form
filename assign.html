@@ -701,8 +701,10 @@ function closeConfirm() {
 
 function confirmOk() {
   const action = pendingAction;
+  console.log('confirmOk called, action:', action);
   closeConfirm();
   if (action) action();
+  else console.log('No action to run!');
 }
 
 // Updated action wrappers with confirmations
@@ -777,7 +779,10 @@ async function confirmAssignExec(id) {
         assignedToEmail: email,
         assignedDate: today,
         status: 'Priskirta',
-        assignedByEmail: currentUser.username
+        assignedByEmail: currentUser.username,
+        orderNo: allJobs.find(j=>j.id===id)?.orderNo || '',
+        objectId: allJobs.find(j=>j.id===id)?.object || '',
+        customer: allJobs.find(j=>j.id===id)?.customer || ''
       })
     });
     if (!resp.ok) throw new Error('Worker error: ' + resp.status);

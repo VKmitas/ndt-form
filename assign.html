@@ -782,6 +782,7 @@ async function confirmAssignExec(id) {
         assignedByEmail: currentUser.username,
         orderNo: allJobs.find(j=>j.id===id)?.orderNo || '',
         objectId: allJobs.find(j=>j.id===id)?.object || '',
+        objectIdentification: allJobs.find(j=>j.id===id)?.object || '',
         customer: allJobs.find(j=>j.id===id)?.customer || ''
       })
     });

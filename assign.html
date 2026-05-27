@@ -288,10 +288,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <!-- Assignment tab -->
 <div class="tab-panel" id="tab-assignment">
   <div class="filters">
-    <button class="filter-btn active" onclick="filterJobs('all',this)">Visi <span class="filter-count" id="fc-all">0</span></button>
-    <button class="filter-btn" onclick="filterJobs('Patvirtinta',this)">Laukia priskyrimo <span class="filter-count" id="fc-Patvirtinta">0</span></button>
+    <button class="filter-btn active" onclick="filterJobs('Patvirtinta',this)">Laukia priskyrimo <span class="filter-count" id="fc-Patvirtinta">0</span></button>
     <button class="filter-btn" onclick="filterJobs('Priskirta',this)">Priskirta <span class="filter-count" id="fc-Priskirta">0</span></button>
     <button class="filter-btn" onclick="filterJobs('Atlikta',this)">Atlikta <span class="filter-count" id="fc-Atlikta">0</span></button>
+    <button class="filter-btn" onclick="filterJobs('all',this)">Visi <span class="filter-count" id="fc-all">0</span></button>
     <div class="search-box">
       <span class="search-icon">🔍</span>
       <input type="text" placeholder="Ieškoti..." oninput="searchJobs(this.value)">
@@ -340,7 +340,7 @@ let currentUser = null;
 let canAssign = false;
 let engineers = [];
 let allJobs = [];
-let currentFilter = 'all';
+let currentFilter = 'Patvirtinta';
 let currentSearch = '';
 let siteId = '';
 
@@ -552,7 +552,7 @@ async function markDone(id) {
     const job = allJobs.find(j=>j.id===id);
     if (job) job.status = 'Atlikta';
     showToast('✓ Pažymėta kaip atlikta','success');
-    updateStats(); updateFilterCounts(); renderJobs();
+    setTimeout(() => loadData(), 2000);
   } catch(e) { showToast('Klaida: '+e.message,'error'); }
 }
 
@@ -649,7 +649,7 @@ async function approveJob(id, action) {
     if (!resp.ok && resp.status !== 202) throw new Error('Flow error: ' + resp.status);
     job.status = action === 'approve' ? 'Patvirtinta' : 'Atmesta';
     showToast(action === 'approve' ? '✓ Paraiška patvirtinta!' : '✕ Paraiška atmesta', action === 'approve' ? 'success' : 'error');
-    updateStats(); updateFilterCounts(); renderApprovals(); renderJobs();
+    setTimeout(() => loadData(), 2000);
   } catch(e) { showToast('Klaida: '+e.message,'error'); }
 }
 
@@ -790,7 +790,7 @@ async function confirmAssignExec(id) {
     const job = allJobs.find(j=>j.id===id);
     if (job) { job.assignedTo=name; job.assignedToEmail=email; job.assignedDate=today; job.status='Priskirta'; }
     showToast(`✓ Priskirta: ${name}`,'success');
-    updateStats(); updateFilterCounts(); renderJobs();
+    setTimeout(() => loadData(), 2000);
   } catch(e) { showToast('Klaida: '+e.message,'error'); }
 }
 

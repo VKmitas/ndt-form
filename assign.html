@@ -161,7 +161,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
     <div class="header-nav">
-      <a href="index.html" class="nav-link">📋 Nauja paraiška</a>
+      <a href="index.html" class="nav-link">🏠 Pradžia</a>
+      <a href="form.html" class="nav-link">📋 Nauja paraiška</a>
       <a href="assign.html" class="nav-link active">👷 Priskyrimas</a>
       <div class="user-pill">
         <div class="user-avatar" id="userAvatar">?</div>
@@ -273,10 +274,10 @@ async function getSpToken() {
   }
 }
 
-async function spGetList(listName, filter='', top=500) {
+async function spGetList(listName, selectFields='', top=500) {
   const token = await getSpToken();
   let url = `${SP_SITE_URL}/_api/web/lists/getbytitle('${listName}')/items?$top=${top}`;
-  if (filter) url += `&$filter=${filter}`;
+  if (selectFields) url += `&$select=${selectFields}`;
   const resp = await fetch(url, {
     headers: { Authorization: 'Bearer ' + token, Accept: 'application/json;odata=verbose' }
   });
@@ -289,8 +290,8 @@ async function spGetList(listName, filter='', top=500) {
 async function loadData() {
   document.getElementById('jobsList').innerHTML = '<div class="loading"><div class="spinner-lg"></div>Kraunama...</div>';
   try {
-    // Load Engineers
-    const engItems = await spGetList('Engineers', '', 100);
+    // Load Engineers — select by display names
+    const engItems = await spGetList('Engineers', 'Id,Title,Email,Role,CanAssign', 100);
     engineers = engItems.map(i => ({
       id: i.Id,
       name: i.Title || '',
@@ -305,8 +306,11 @@ async function loadData() {
     canAssign = me?.canAssign || false;
     document.getElementById('noPermBanner').style.display = canAssign ? 'none' : 'block';
 
-    // Load NDT_Requests
-    const jobItems = await spGetList('NDT_Requests', '', 500);
+    // Load NDT_Requests — select only needed columns
+    const jobItems = await spGetList('NDT_Requests',
+      'Id,IremasOrderNo,ShopInternalNo,Customer,ObjectIdentification,ObjectPlace,ExaminationMethods,Status,SignatureDate,Created,SubmittedBy,ResponsibleName,AssignedTo,AssignedToEmail,AssignedDate,Notes',
+      500
+    );
     allJobs = jobItems.map(i => ({
       id: String(i.Id),
       orderNo:         i.IremasOrderNo || '',
@@ -323,7 +327,7 @@ async function loadData() {
       assignedDate:    i.AssignedDate || '',
       responsible:     i.ResponsibleName || '',
       notes:           i.Notes || '',
-    })).sort((a,b) => b.id - a.id);
+    })).sort((a,b) => Number(b.id) - Number(a.id));
 
     updateStats();
     updateFilterCounts();

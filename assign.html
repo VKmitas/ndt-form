@@ -700,8 +700,9 @@ function closeConfirm() {
 }
 
 function confirmOk() {
+  const action = pendingAction;
   closeConfirm();
-  if (pendingAction) pendingAction();
+  if (action) action();
 }
 
 // Updated action wrappers with confirmations

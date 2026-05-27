@@ -291,11 +291,11 @@ async function loadData() {
   document.getElementById('jobsList').innerHTML = '<div class="loading"><div class="spinner-lg"></div>Kraunama...</div>';
   try {
     // Load Engineers — select by display names
-    const engItems = await spGetList('Engineers', 'Id,Title,Email,Role,CanAssign', 100);
+    const engItems = await spGetList('Engineers', 'Id,Title,Email0,Role,CanAssign', 100);
     engineers = engItems.map(i => ({
       id: i.Id,
       name: i.Title || '',
-      email: i.Email || '',
+      email: i.Email0 || i.Email || '',
       role: i.Role || '',
       canAssign: i.CanAssign === true || i.CanAssign === 'Yes'
     }));

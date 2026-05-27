@@ -309,7 +309,7 @@ async function loadData() {
 
     // Load NDT_Requests — select only needed columns
     const jobItems = await spGetList('NDT_Requests',
-      'Id,IremasOrderNo,ShopInternalNo,Customer,ObjectIdentification,ObjectPlace,ExaminationMethods,Status,SignatureDate,Created,SubmittedBy,ResponsibleName,AssignedTo,AssignedToEmail,AssignedDate,Notes',
+      'Id,IremasOrderNo,ShopInternalNo,Customer,ObjectIdentification,ObjectPlace,ExaminationMethods,Status,SignatureDate,Created,SubmittedBy,ResponsibleName,AssignedToEmail,AssignedDate,Notes',
       500
     );
     allJobs = jobItems.map(i => ({
@@ -323,7 +323,7 @@ async function loadData() {
       status:          i.Status || 'Pateikta',
       submitted:       (i.SignatureDate || i.Created || '').substring(0,10),
       submittedBy:     i.SubmittedBy || i.ResponsibleName || '',
-      assignedTo:      i.AssignedTo || '',
+      assignedTo:      i.AssignedTo || i.AssignedToEmail || '',
       assignedToEmail: i.AssignedToEmail || '',
       assignedDate:    i.AssignedDate || '',
       responsible:     i.ResponsibleName || '',

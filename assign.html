@@ -291,7 +291,8 @@ async function loadData() {
   document.getElementById('jobsList').innerHTML = '<div class="loading"><div class="spinner-lg"></div>Kraunama...</div>';
   try {
     // Load Engineers — select by display names
-    const engItems = await spGetList('Engineers', 'Id,Title,Email0,Role,CanAssign', 100);
+    const engItems = await spGetList('Engineers', '', 100);
+    if (engItems.length > 0) console.log('Engineers fields:', Object.keys(engItems[0]));
     engineers = engItems.map(i => ({
       id: i.Id,
       name: i.Title || '',

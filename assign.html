@@ -308,10 +308,8 @@ async function loadData() {
     document.getElementById('noPermBanner').style.display = canAssign ? 'none' : 'block';
 
     // Load NDT_Requests — select only needed columns
-    const jobItems = await spGetList('NDT_Requests',
-      'Id,IremasOrderNo,ShopInternalNo,Customer,ObjectIdentification,ObjectPlace,ExaminationMethods,Status,SignatureDate,Created,SubmittedBy,ResponsibleName,AssignedToEmail,AssignedDate,Notes',
-      500
-    );
+    const jobItems = await spGetList('NDT_Requests', '', 500);
+    if (jobItems.length > 0) console.log('NDT_Requests fields:', Object.keys(jobItems[0]));
     allJobs = jobItems.map(i => ({
       id: String(i.Id),
       orderNo:         i.IremasOrderNo || '',

@@ -161,6 +161,55 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .comment-row{display:flex;gap:10px;margin-top:12px;}
 .comment-input{font-family:var(--font);font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);flex:1;color:var(--text);}
 .comment-input:focus{outline:none;border-color:var(--blue-accent);}
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;display:none;align-items:center;justify-content:center;padding:16px;}
+.confirm-overlay.show{display:flex;}
+.confirm-card{background:var(--white);border-radius:12px;padding:28px 32px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.confirm-icon{font-size:32px;margin-bottom:12px;text-align:center;}
+.confirm-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;text-align:center;}
+.confirm-msg{font-size:13px;color:var(--muted);text-align:center;line-height:1.5;margin-bottom:20px;}
+.confirm-detail{font-size:12px;font-weight:600;color:var(--blue);background:var(--blue-light);padding:8px 12px;border-radius:var(--radius);text-align:center;margin-bottom:20px;}
+.confirm-btns{display:flex;gap:10px;}
+.confirm-btns .btn{flex:1;padding:10px;font-size:13px;text-align:center;}
+
+/* Mobile */
+@media(max-width:640px){
+  .header-inner{padding:12px 16px;flex-wrap:wrap;gap:8px;}
+  .logo-sub{display:none;}
+  .header-nav{gap:4px;flex-wrap:wrap;}
+  .nav-link{font-size:11px;padding:5px 8px;}
+  .user-name{display:none;}
+  .page-bar{padding:12px 16px;}
+  .page-title{font-size:14px;}
+  .stats{grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px 0;}
+  .stat{padding:10px 12px;gap:10px;}
+  .stat-icon{width:32px;height:32px;font-size:15px;}
+  .stat-val{font-size:18px;}
+  .stat-label{font-size:10px;}
+  .tabs{padding:0 16px;}
+  .tab{padding:10px 14px;font-size:12px;}
+  .no-perm{margin:10px 16px 0;}
+  .filters{padding:10px 16px;gap:6px;}
+  .filter-btn{font-size:11px;padding:5px 10px;}
+  .search-box{width:100%;margin-left:0;}
+  .search-box input{width:100%;}
+  .jobs{padding:0 16px 32px;}
+  .job-top{grid-template-columns:1fr auto;gap:8px;padding:12px 14px;}
+  .job-order{font-size:12px;}
+  .job-methods,.job-date{display:none;}
+  .job-actions{flex-wrap:wrap;justify-content:flex-end;gap:4px;}
+  .btn{font-size:11px;padding:6px 10px;}
+  .details-grid{grid-template-columns:1fr 1fr;}
+  .job-details{padding:12px 14px;}
+  .assign-row{flex-direction:column;align-items:stretch;}
+  .engineer-select,.assign-note{min-width:unset;width:100%;}
+  .approval-top{grid-template-columns:1fr;gap:8px;padding:12px 14px;}
+  .approval-actions{flex-wrap:wrap;gap:6px;}
+  .btn-approve,.btn-reject{flex:1;text-align:center;}
+  .comment-row{flex-direction:column;}
+  .assigned-to{flex-wrap:wrap;}
+  .assigned-date{margin-left:0;width:100%;}
+  .confirm-card{padding:22px 20px;}
+}
 </style>
 </head>
 <body>
@@ -250,6 +299,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
   <div class="jobs" id="jobsList">
     <div class="loading"><div class="spinner-lg"></div>Kraunama...</div>
+  </div>
+</div>
+
+<!-- Confirmation dialog -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-card">
+    <div class="confirm-icon" id="confirmIcon">❓</div>
+    <div class="confirm-title" id="confirmTitle">Ar tikrai?</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-detail" id="confirmDetail" style="display:none"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Atšaukti / Cancel</button>
+      <button class="btn btn-primary" id="confirmOkBtn" onclick="confirmOk()">Patvirtinti</button>
+    </div>
   </div>
 </div>
 
@@ -374,6 +437,7 @@ async function loadData() {
       status:          i.field_115 || 'Pateikta',
       submitted:       (i.field_113 || i.Created || '').substring(0,10),
       submittedBy:     i.field_112 || '',
+      submittedByEmail: i.SubmittedByEmail || '',
       assignedTo:      i.AssignedToEmail || '',
       assignedToEmail: i.AssignedToEmail || '',
       assignedDate:    i.AssignedDate ? i.AssignedDate.substring(0,10) : '',
@@ -416,7 +480,7 @@ function renderJobs() {
         <div class="job-actions">
           <span class="status ${job.status}">${statusLabel(job.status)}</span>
           ${canAssign && job.status === 'Patvirtinta' ? `<button class="btn btn-primary" onclick="event.stopPropagation();openAssign('${job.id}')">Priskirti →</button>` : ''}
-          ${canAssign && job.status === 'Priskirta' ? `<button class="btn btn-success" onclick="event.stopPropagation();markDone('${job.id}')">✓ Atlikta</button>` : ''}
+          ${canAssign && job.status === 'Priskirta' ? `<button class="btn btn-success" onclick="event.stopPropagation();confirmMarkDone('${job.id}')">✓ Atlikta</button>` : ''}
           <button class="btn-expand" onclick="event.stopPropagation();toggleExpand('${job.id}')">▾</button>
         </div>
       </div>
@@ -467,33 +531,6 @@ function openAssign(id) {
       </div>
     </div>`;
   panel.scrollIntoView({behavior:'smooth', block:'nearest'});
-}
-
-async function confirmAssign(id) {
-  const val = document.getElementById('eng-'+id).value;
-  if (!val) { showToast('Pasirinkite inžinierių','error'); return; }
-  const [name, email] = val.split('|');
-  const today = new Date().toISOString().split('T')[0];
-  showToast('Siunčiama...','info');
-  try {
-    const resp = await fetch(WORKER_URL + '/assign', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        itemId: id,
-        assignedTo: name,
-        assignedToEmail: email,
-        assignedDate: today,
-        status: 'Priskirta',
-        assignedByEmail: currentUser.username
-      })
-    });
-    if (!resp.ok) throw new Error('Worker error: ' + resp.status);
-    const job = allJobs.find(j=>j.id===id);
-    if (job) { job.assignedTo=name; job.assignedToEmail=email; job.assignedDate=today; job.status='Priskirta'; }
-    showToast(`✓ Priskirta: ${name}`,'success');
-    updateStats(); updateFilterCounts(); renderJobs();
-  } catch(e) { showToast('Klaida: '+e.message,'error'); }
 }
 
 async function markDone(id) {
@@ -560,8 +597,8 @@ function renderApprovals() {
         </div>
         <div class="approval-actions">
           ${canApprove ? `
-            <button class="btn-approve" onclick="event.stopPropagation();approveJob('${job.id}','approve')">✓ Patvirtinti</button>
-            <button class="btn-reject" onclick="event.stopPropagation();toggleApproval('${job.id}')">✕ Atmesti</button>
+            <button class="btn-approve" onclick="event.stopPropagation();confirmApprove('${job.id}')">✓ Patvirtinti</button>
+            <button class="btn-reject" onclick="event.stopPropagation();confirmReject('${job.id}')">✕ Atmesti</button>
           ` : `<span class="status Pateikta">📋 Pateikta</span>`}
           <button class="btn-expand" onclick="event.stopPropagation();toggleApproval('${job.id}')">▾</button>
         </div>
@@ -604,7 +641,7 @@ async function approveJob(id, action) {
         action: action,
         approvedBy: currentUser.username,
         comment: comment,
-        submittedByEmail: job.submittedBy,
+        submittedByEmail: job.submittedByEmail || job.submittedBy,
         orderNo: job.orderNo,
         objectId: job.object
       })
@@ -637,6 +674,117 @@ function showToast(msg, type='success') {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast '+type+' show';
   setTimeout(()=>t.classList.remove('show'), 3500);
+}
+
+// ── CONFIRMATION DIALOG ─────────────────────────────────
+let pendingAction = null;
+
+function confirm(opts) {
+  // opts: { icon, title, msg, detail, okLabel, okClass, action }
+  document.getElementById('confirmIcon').textContent = opts.icon || '❓';
+  document.getElementById('confirmTitle').textContent = opts.title || 'Ar tikrai?';
+  document.getElementById('confirmMsg').textContent = opts.msg || '';
+  const det = document.getElementById('confirmDetail');
+  if (opts.detail) { det.textContent = opts.detail; det.style.display = 'block'; }
+  else { det.style.display = 'none'; }
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = opts.okLabel || 'Patvirtinti';
+  okBtn.className = 'btn ' + (opts.okClass || 'btn-primary');
+  pendingAction = opts.action;
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('show');
+  pendingAction = null;
+}
+
+function confirmOk() {
+  closeConfirm();
+  if (pendingAction) pendingAction();
+}
+
+// Updated action wrappers with confirmations
+function confirmApprove(id) {
+  const job = allJobs.find(j=>j.id===id);
+  confirm({
+    icon: '✅',
+    title: 'Patvirtinti paraišką?',
+    msg: 'Paraiška bus patvirtinta ir perduota priskyrimui. Pateikėjas bus informuotas el. paštu.',
+    detail: `${job.orderNo} · ${job.object} · ${job.customer}`,
+    okLabel: '✓ Patvirtinti',
+    okClass: 'btn-success',
+    action: () => approveJob(id, 'approve')
+  });
+}
+
+function confirmReject(id) {
+  const job = allJobs.find(j=>j.id===id);
+  confirm({
+    icon: '✕',
+    title: 'Atmesti paraišką?',
+    msg: 'Paraiška bus atmesta. Pateikėjas bus informuotas el. paštu.',
+    detail: `${job.orderNo} · ${job.object} · ${job.customer}`,
+    okLabel: '✕ Atmesti',
+    okClass: 'btn btn-reject',
+    action: () => approveJob(id, 'reject')
+  });
+}
+
+function confirmAssign(id) {
+  const engVal = document.getElementById('eng-'+id)?.value;
+  if (!engVal) { showToast('Pasirinkite inžinierių','error'); return; }
+  const [name] = engVal.split('|');
+  const job = allJobs.find(j=>j.id===id);
+  confirm({
+    icon: '👷',
+    title: 'Priskirti inžinierių?',
+    msg: `Darbas bus priskirtas: ${name}`,
+    detail: `${job.orderNo} · ${job.object}`,
+    okLabel: '✓ Priskirti',
+    okClass: 'btn-primary',
+    action: () => confirmAssignExec(id)
+  });
+}
+
+function confirmMarkDone(id) {
+  const job = allJobs.find(j=>j.id===id);
+  confirm({
+    icon: '✅',
+    title: 'Pažymėti kaip atliktą?',
+    msg: 'Darbas bus pažymėtas kaip atliktas.',
+    detail: `${job.orderNo} · ${job.object}`,
+    okLabel: '✓ Atlikta',
+    okClass: 'btn-success',
+    action: () => markDone(id)
+  });
+}
+
+async function confirmAssignExec(id) {
+  const val = document.getElementById('eng-'+id).value;
+  if (!val) { showToast('Pasirinkite inžinierių','error'); return; }
+  const [name, email] = val.split('|');
+  const today = new Date().toISOString().split('T')[0];
+  showToast('Siunčiama...','info');
+  try {
+    const resp = await fetch(WORKER_URL + '/assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        itemId: id,
+        assignedTo: name,
+        assignedToEmail: email,
+        assignedDate: today,
+        status: 'Priskirta',
+        assignedByEmail: currentUser.username
+      })
+    });
+    if (!resp.ok) throw new Error('Worker error: ' + resp.status);
+    const job = allJobs.find(j=>j.id===id);
+    if (job) { job.assignedTo=name; job.assignedToEmail=email; job.assignedDate=today; job.status='Priskirta'; }
+    showToast(`✓ Priskirta: ${name}`,'success');
+    updateStats(); updateFilterCounts(); renderJobs();
+  } catch(e) { showToast('Klaida: '+e.message,'error'); }
 }
 
 initAuth();

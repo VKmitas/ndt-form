@@ -742,6 +742,7 @@ function updateStats() {
   document.getElementById('statAssigned').textContent = allJobs.filter(j=>j.status==='Priskirta').length;
   document.getElementById('statDone').textContent = allJobs.filter(j=>j.status==='Atlikta').length;
   document.getElementById('badge-approvals').textContent = awaitApproval;
+  document.getElementById('badge-assignment').textContent = allJobs.filter(j=>j.status==='Patvirtinta').length;
   document.getElementById('badge-mine').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===currentUser?.username?.toLowerCase() && j.status==='Priskirta').length;
 }
 

@@ -560,7 +560,7 @@ async function markDone(id) {
   const atitinka = parseInt(document.getElementById('complete_atitinka')?.value) || 0;
   const neatitinka = parseInt(document.getElementById('complete_neatitinka')?.value) || 0;
   const valandos = parseFloat(document.getElementById('complete_valandos')?.value) || 0;
-  const files = document.getElementById('complete_files')?.files || [];
+  const files = droppedFiles;
 
   showToast('Siunčiama...','info');
   try {
@@ -611,6 +611,7 @@ async function markDone(id) {
     renderJobs();
     renderMine();
     showToast(`✓ Užbaigta${files.length > 0 ? ` · ${files.length} failai įkelti` : ''}`, 'success');
+    resetFileUpload();
     setTimeout(() => loadData(), 4000);
   } catch(e) { showToast('Klaida: '+e.message,'error'); }
 }
@@ -816,9 +817,63 @@ function showConfirm(opts) {
 function closeConfirm() {
   document.getElementById('confirmOverlay').classList.remove('show');
   pendingAction = null;
+  resetFileUpload();
 }
 
-function confirmOk() {
+// File drag & drop handling
+let droppedFiles = [];
+
+function handleDrop(event) {
+  const files = Array.from(event.dataTransfer.files);
+  addFiles(files);
+}
+
+function updateFileList() {
+  const files = Array.from(document.getElementById('complete_files').files);
+  addFiles(files);
+}
+
+function addFiles(newFiles) {
+  newFiles.forEach(f => {
+    if (!droppedFiles.find(x => x.name === f.name)) droppedFiles.push(f);
+  });
+  renderFileList();
+}
+
+function removeFile(name) {
+  droppedFiles = droppedFiles.filter(f => f.name !== name);
+  renderFileList();
+}
+
+function renderFileList() {
+  const list = document.getElementById('file_list');
+  if (!list) return;
+  list.innerHTML = droppedFiles.map(f => `
+    <div style="display:flex;align-items:center;gap:6px;background:var(--blue-light);border:1px solid var(--border);border-radius:20px;padding:3px 10px 3px 8px;font-size:11px;color:var(--blue);">
+      <span>${fileIcon(f.name)}</span>
+      <span>${f.name}</span>
+      <span onclick="removeFile('${f.name}')" style="cursor:pointer;color:var(--muted);margin-left:2px;font-size:13px;">✕</span>
+    </div>`).join('');
+  const dz = document.getElementById('dropzone');
+  if (dz && droppedFiles.length > 0) dz.style.borderColor = 'var(--green)';
+}
+
+function fileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  if (['jpg','jpeg','png'].includes(ext)) return '🖼';
+  if (ext === 'pdf') return '📄';
+  if (['docx','doc'].includes(ext)) return '📝';
+  if (['xlsx','xls'].includes(ext)) return '📊';
+  return '📎';
+}
+
+function resetFileUpload() {
+  droppedFiles = [];
+  const fl = document.getElementById('file_list');
+  if (fl) fl.innerHTML = '';
+  const dz = document.getElementById('dropzone');
+  if (dz) dz.style.borderColor = 'var(--border)';
+}
   const action = pendingAction;
   console.log('confirmOk called, action:', action);
   closeConfirm();
@@ -894,9 +949,18 @@ function confirmMarkDone(id) {
       </div>
     </div>
     <div style="margin-top:12px;text-align:left">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Failai / Files (nuotraukos, ataskaitos...)</div>
-      <input type="file" id="complete_files" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" style="font-family:var(--font);font-size:12px;width:100%;padding:6px;border:1px dashed var(--border);border-radius:var(--radius);background:var(--bg);cursor:pointer;">
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">PDF, JPG, PNG, Word, Excel · Keli failai leidžiami</div>
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Failai / Files</div>
+      <div id="dropzone" onclick="document.getElementById('complete_files').click()"
+        style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;background:var(--bg);transition:border-color .15s,background .15s;"
+        ondragover="event.preventDefault();this.style.borderColor='var(--blue-accent)';this.style.background='var(--blue-light)'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
+        ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='var(--bg)';handleDrop(event)">
+        <div style="font-size:20px;margin-bottom:6px">📎</div>
+        <div style="font-size:13px;color:var(--muted)">Vilkite failus čia arba <span style="color:var(--blue-accent);font-weight:600">pasirinkite</span></div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px">PDF, JPG, PNG, Word, Excel</div>
+        <input type="file" id="complete_files" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" style="display:none" onchange="updateFileList()">
+      </div>
+      <div id="file_list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;"></div>
     </div>`;
   const okBtn = document.getElementById('confirmOkBtn');
   okBtn.textContent = '✓ Užbaigti';

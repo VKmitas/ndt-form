@@ -874,6 +874,8 @@ function resetFileUpload() {
   const dz = document.getElementById('dropzone');
   if (dz) dz.style.borderColor = 'var(--border)';
 }
+
+function confirmOk() {
   const action = pendingAction;
   console.log('confirmOk called, action:', action);
   closeConfirm();

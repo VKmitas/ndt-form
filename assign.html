@@ -950,14 +950,19 @@ function confirmMarkDone(id) {
     </div>
     <div style="margin-top:12px;text-align:left">
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Failai / Files</div>
-      <div id="dropzone" onclick="document.getElementById('complete_files').click()"
-        style="border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;background:var(--bg);transition:border-color .15s,background .15s;"
-        ondragover="event.preventDefault();this.style.borderColor='var(--blue-accent)';this.style.background='var(--blue-light)'"
-        ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
-        ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='var(--bg)';handleDrop(event)">
-        <div style="font-size:20px;margin-bottom:6px">📎</div>
-        <div style="font-size:13px;color:var(--muted)">Vilkite failus čia arba <span style="color:var(--blue-accent);font-weight:600">pasirinkite</span></div>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px">PDF, JPG, PNG, Word, Excel</div>
+      <div id="dropzone"
+        style="border:2px dashed var(--blue-accent);border-radius:8px;padding:24px 16px;text-align:center;cursor:pointer;background:var(--blue-light);transition:all .15s;"
+        ondragover="event.preventDefault();this.style.background='#d0e4f5';this.style.borderColor='var(--blue)'"
+        ondragleave="this.style.background='var(--blue-light)';this.style.borderColor='var(--blue-accent)'"
+        ondrop="event.preventDefault();this.style.background='var(--blue-light)';this.style.borderColor='var(--blue-accent)';handleDrop(event)">
+        <div style="font-size:28px;margin-bottom:8px">☁️</div>
+        <div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:4px">Vilkite failus čia / Drag & Drop files here</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">arba / or</div>
+        <button type="button" onclick="document.getElementById('complete_files').click()"
+          style="font-family:var(--font);font-size:12px;font-weight:600;padding:7px 18px;border:2px solid var(--blue-accent);border-radius:var(--radius);background:var(--white);color:var(--blue-accent);cursor:pointer;">
+          Pasirinkti failus / Browse Files
+        </button>
+        <div style="font-size:10px;color:var(--muted);margin-top:10px">PDF, JPG, PNG, Word, Excel</div>
         <input type="file" id="complete_files" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" style="display:none" onchange="updateFileList()">
       </div>
       <div id="file_list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;"></div>

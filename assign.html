@@ -341,7 +341,7 @@ const TENANT_ID    = 'f300c84f-87f0-4d9e-8284-1e36dbe06fbe';
 const SP_SITE_URL  = 'https://achemosgrupelt.sharepoint.com/sites/MBL';
 const WORKER_URL   = 'https://ndt.v-kmitas.workers.dev';
 const FLOW_APPROVE = 'https://ndt.v-kmitas.workers.dev/approve';
-const SCOPES = ['User.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Read'];
+const SCOPES = ['User.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Write'];
 
 let canApprove = false;
 let approvalSearch = '';
@@ -391,13 +391,13 @@ function setUserUI(account) {
 async function getSpToken() {
   try {
     const resp = await msalInstance.acquireTokenSilent({
-      scopes: ['https://achemosgrupelt.sharepoint.com/AllSites.Read'],
+      scopes: ['https://achemosgrupelt.sharepoint.com/AllSites.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Write'],
       account: currentUser
     });
     return resp.accessToken;
   } catch(e) {
     const resp = await msalInstance.acquireTokenPopup({
-      scopes: ['https://achemosgrupelt.sharepoint.com/AllSites.Read'],
+      scopes: ['https://achemosgrupelt.sharepoint.com/AllSites.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Write'],
       account: currentUser
     });
     return resp.accessToken;
@@ -560,8 +560,11 @@ async function markDone(id) {
   const atitinka = parseInt(document.getElementById('complete_atitinka')?.value) || 0;
   const neatitinka = parseInt(document.getElementById('complete_neatitinka')?.value) || 0;
   const valandos = parseFloat(document.getElementById('complete_valandos')?.value) || 0;
+  const files = document.getElementById('complete_files')?.files || [];
+
   showToast('Siunčiama...','info');
   try {
+    // Submit completion data
     const resp = await fetch(WORKER_URL + '/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -581,9 +584,34 @@ async function markDone(id) {
       })
     });
     if (!resp.ok) throw new Error('Worker error: ' + resp.status);
+
+    // Upload files to SharePoint
+    if (files.length > 0) {
+      showToast('Įkeliami failai...','info');
+      const token = await getSpToken();
+      const folderPath = `/sites/MBL/Bendrai naudojami dokumentai/Formos/${job.orderNo}`;
+      for (const file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        await fetch(`${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderPath}')/Files/add(url='${encodeURIComponent(file.name)}',overwrite=true)`, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + token,
+            'Accept': 'application/json;odata=verbose',
+            'Content-Type': 'application/octet-stream'
+          },
+          body: arrayBuffer
+        });
+      }
+    }
+
+    // Update local state immediately
     if (job) job.status = 'Atlikta';
-    showToast('✓ Pažymėta kaip atlikta','success');
-    setTimeout(() => loadData(), 2000);
+    updateStats();
+    updateFilterCounts();
+    renderJobs();
+    renderMine();
+    showToast(`✓ Užbaigta${files.length > 0 ? ` · ${files.length} failai įkelti` : ''}`, 'success');
+    setTimeout(() => loadData(), 4000);
   } catch(e) { showToast('Klaida: '+e.message,'error'); }
 }
 
@@ -864,6 +892,11 @@ function confirmMarkDone(id) {
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Darbo val.</div>
         <input type="number" id="complete_valandos" min="0" step="0.5" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
       </div>
+    </div>
+    <div style="margin-top:12px;text-align:left">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Failai / Files (nuotraukos, ataskaitos...)</div>
+      <input type="file" id="complete_files" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" style="font-family:var(--font);font-size:12px;width:100%;padding:6px;border:1px dashed var(--border);border-radius:var(--radius);background:var(--bg);cursor:pointer;">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">PDF, JPG, PNG, Word, Excel · Keli failai leidžiami</div>
     </div>`;
   const okBtn = document.getElementById('confirmOkBtn');
   okBtn.textContent = '✓ Užbaigti';

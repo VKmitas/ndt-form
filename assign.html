@@ -589,19 +589,30 @@ async function markDone(id) {
     if (files.length > 0) {
       showToast('Įkeliami failai...','info');
       const token = await getSpToken();
-      const folderPath = `/sites/MBL/Bendrai naudojami dokumentai/Formos/${job.orderNo}`;
+      const folderRelPath = `/sites/MBL/Bendrai naudojami dokumentai/Formos/${job.orderNo}`;
+      let uploadErrors = 0;
       for (const file of files) {
-        const arrayBuffer = await file.arrayBuffer();
-        await fetch(`${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderPath}')/Files/add(url='${encodeURIComponent(file.name)}',overwrite=true)`, {
-          method: 'POST',
-          headers: {
-            Authorization: 'Bearer ' + token,
-            'Accept': 'application/json;odata=verbose',
-            'Content-Type': 'application/octet-stream'
-          },
-          body: arrayBuffer
-        });
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const uploadResp = await fetch(`${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${encodeURIComponent(folderRelPath)}')/Files/add(url='${encodeURIComponent(file.name)}',overwrite=true)`, {
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer ' + token,
+              'Accept': 'application/json;odata=verbose',
+              'Content-Type': 'application/octet-stream'
+            },
+            body: arrayBuffer
+          });
+          if (!uploadResp.ok) {
+            console.error('File upload failed:', file.name, uploadResp.status, await uploadResp.text());
+            uploadErrors++;
+          }
+        } catch(fe) {
+          console.error('File upload error:', file.name, fe);
+          uploadErrors++;
+        }
       }
+      if (uploadErrors > 0) showToast(`⚠ ${uploadErrors} failai neįkelti`, 'error');
     }
 
     // Update local state immediately

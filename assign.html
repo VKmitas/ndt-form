@@ -589,12 +589,17 @@ async function markDone(id) {
     if (files.length > 0) {
       showToast('Įkeliami failai...','info');
       const token = await getSpToken();
+      // Server-relative path — must NOT be encodeURIComponent'd inside decodedurl=''
+      // SharePoint library "Bendrai naudojami dokumentai" has server-relative path below
       const folderRelPath = `/sites/MBL/Bendrai naudojami dokumentai/Formos/${job.orderNo}`;
       let uploadErrors = 0;
       for (const file of files) {
         try {
           const arrayBuffer = await file.arrayBuffer();
-          const uploadResp = await fetch(`${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${encodeURIComponent(folderRelPath)}')/Files/add(url='${encodeURIComponent(file.name)}',overwrite=true)`, {
+          // decodedurl='' expects the raw decoded path (spaces allowed, slashes must NOT be encoded)
+          // file.name must also be raw (not encoded) inside the OData add(url='') parameter
+          const uploadUrl = `${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelPath}')/Files/add(url='${file.name}',overwrite=true)`;
+          const uploadResp = await fetch(uploadUrl, {
             method: 'POST',
             headers: {
               Authorization: 'Bearer ' + token,
@@ -604,7 +609,12 @@ async function markDone(id) {
             body: arrayBuffer
           });
           if (!uploadResp.ok) {
-            console.error('File upload failed:', file.name, uploadResp.status, await uploadResp.text());
+            const errText = await uploadResp.text();
+            console.error('File upload failed:', file.name, uploadResp.status, errText);
+            // Try to extract SP error message for toast
+            let spErr = uploadResp.status;
+            try { spErr = JSON.parse(errText)?.error?.message?.value || uploadResp.status; } catch{}
+            showToast(`⚠ Klaida (${file.name}): ${spErr}`, 'error');
             uploadErrors++;
           }
         } catch(fe) {

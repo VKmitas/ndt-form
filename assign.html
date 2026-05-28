@@ -559,20 +559,19 @@ async function markDone(id) {
   const job = allJobs.find(j=>j.id===id);
   showToast('Siunčiama...','info');
   try {
-    const resp = await fetch(WORKER_URL + '/assign', {
+    const resp = await fetch(WORKER_URL + '/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         itemId: id,
         assignedTo: job?.assignedTo || '',
         assignedToEmail: job?.assignedToEmail || '',
-        assignedDate: job?.assignedDate || '',
-        status: 'Atlikta',
-        assignedByEmail: currentUser.username,
+        completedBy: currentUser.username,
+        completedDate: new Date().toISOString().split('T')[0],
         orderNo: job?.orderNo || '',
-        objectId: job?.object || '',
         objectIdentification: job?.object || '',
-        customer: job?.customer || ''
+        customer: job?.customer || '',
+        approvedBy: currentUser.username
       })
     });
     if (!resp.ok) throw new Error('Worker error: ' + resp.status);

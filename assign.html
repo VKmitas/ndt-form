@@ -557,6 +557,9 @@ function openAssign(id) {
 
 async function markDone(id) {
   const job = allJobs.find(j=>j.id===id);
+  const atitinka = parseInt(document.getElementById('complete_atitinka')?.value) || 0;
+  const neatitinka = parseInt(document.getElementById('complete_neatitinka')?.value) || 0;
+  const valandos = parseFloat(document.getElementById('complete_valandos')?.value) || 0;
   showToast('Siunčiama...','info');
   try {
     const resp = await fetch(WORKER_URL + '/complete', {
@@ -571,7 +574,10 @@ async function markDone(id) {
         orderNo: job?.orderNo || '',
         objectIdentification: job?.object || '',
         customer: job?.customer || '',
-        approvedBy: currentUser.username
+        approvedBy: currentUser.username,
+        atitinka: atitinka,
+        neatitinka: neatitinka,
+        darboValandos: valandos
       })
     });
     if (!resp.ok) throw new Error('Worker error: ' + resp.status);
@@ -837,15 +843,33 @@ function confirmAssign(id) {
 
 function confirmMarkDone(id) {
   const job = allJobs.find(j=>j.id===id);
-  showConfirm({
-    icon: '✅',
-    title: 'Pažymėti kaip atliktą?',
-    msg: 'Darbas bus pažymėtas kaip atliktas.',
-    detail: `${job.orderNo} · ${job.object}`,
-    okLabel: '✓ Atlikta',
-    okClass: 'btn-success',
-    action: () => markDone(id)
-  });
+  // Show completion mini form in confirm dialog
+  document.getElementById('confirmIcon').textContent = '✅';
+  document.getElementById('confirmTitle').textContent = 'Užbaigti darbą / Complete Job';
+  document.getElementById('confirmMsg').textContent = '';
+  const det = document.getElementById('confirmDetail');
+  det.style.display = 'block';
+  det.innerHTML = `
+    <div style="text-align:left;margin-bottom:8px;font-size:13px;color:var(--text)">${job.orderNo} · ${job.object}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:left">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Atitinka ✓</div>
+        <input type="number" id="complete_atitinka" min="0" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Neatitinka ✗</div>
+        <input type="number" id="complete_neatitinka" min="0" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Darbo val.</div>
+        <input type="number" id="complete_valandos" min="0" step="0.5" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
+      </div>
+    </div>`;
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = '✓ Užbaigti';
+  okBtn.className = 'btn btn-success';
+  pendingAction = () => markDone(id);
+  document.getElementById('confirmOverlay').classList.add('show');
 }
 
 async function confirmAssignExec(id) {

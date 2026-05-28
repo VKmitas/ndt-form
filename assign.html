@@ -636,6 +636,8 @@ function renderMine() {
 function toggleExpandMine(id) {
   document.getElementById('mcard-'+id)?.classList.toggle('expanded');
 }
+
+function filterJobs(filter, btn) {
   currentFilter = filter;
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');

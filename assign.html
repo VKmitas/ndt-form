@@ -270,6 +270,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div class="tabs">
   <button class="tab active" onclick="switchTab('approvals',this)">✅ Tvirtinimas <span class="tab-badge" id="badge-approvals">0</span></button>
   <button class="tab" onclick="switchTab('assignment',this)">👷 Priskyrimas <span class="tab-badge" style="background:var(--amber)" id="badge-assignment">0</span></button>
+  <button class="tab" onclick="switchTab('mine',this)">👤 Mano darbai <span class="tab-badge" style="background:var(--blue-accent)" id="badge-mine">0</span></button>
 </div>
 
 <!-- Approvals tab -->
@@ -290,8 +291,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="filters">
     <button class="filter-btn active" onclick="filterJobs('Patvirtinta',this)">Laukia priskyrimo <span class="filter-count" id="fc-Patvirtinta">0</span></button>
     <button class="filter-btn" onclick="filterJobs('Priskirta',this)">Priskirta <span class="filter-count" id="fc-Priskirta">0</span></button>
-    <button class="filter-btn" onclick="filterJobs('mine',this)">Mano darbai <span class="filter-count" id="fc-mine">0</span></button>
-    <button class="filter-btn" onclick="filterJobs('mine_done',this)">Mano atlikti <span class="filter-count" id="fc-mine_done">0</span></button>
     <button class="filter-btn" onclick="filterJobs('Atlikta',this)">Atlikta <span class="filter-count" id="fc-Atlikta">0</span></button>
     <button class="filter-btn" onclick="filterJobs('all',this)">Visi <span class="filter-count" id="fc-all">0</span></button>
     <div class="search-box">
@@ -300,6 +299,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     </div>
   </div>
   <div class="jobs" id="jobsList">
+    <div class="loading"><div class="spinner-lg"></div>Kraunama...</div>
+  </div>
+</div>
+
+<!-- Mano darbai tab -->
+<div class="tab-panel" id="tab-mine">
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterMine('Priskirta',this)">Aktyvūs <span class="filter-count" id="fc-mine">0</span></button>
+    <button class="filter-btn" onclick="filterMine('Atlikta',this)">Atlikti <span class="filter-count" id="fc-mine_done">0</span></button>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Ieškoti..." oninput="searchMine(this.value)">
+    </div>
+  </div>
+  <div class="jobs" id="mineList">
     <div class="loading"><div class="spinner-lg"></div>Kraunama...</div>
   </div>
 </div>
@@ -542,6 +556,7 @@ function openAssign(id) {
 }
 
 async function markDone(id) {
+  const job = allJobs.find(j=>j.id===id);
   showToast('Siunčiama...','info');
   try {
     const resp = await fetch(WORKER_URL + '/assign', {
@@ -549,22 +564,78 @@ async function markDone(id) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         itemId: id,
-        assignedTo: allJobs.find(j=>j.id===id)?.assignedTo || '',
-        assignedToEmail: allJobs.find(j=>j.id===id)?.assignedToEmail || '',
-        assignedDate: allJobs.find(j=>j.id===id)?.assignedDate || '',
+        assignedTo: job?.assignedTo || '',
+        assignedToEmail: job?.assignedToEmail || '',
+        assignedDate: job?.assignedDate || '',
         status: 'Atlikta',
-        assignedByEmail: currentUser.username
+        assignedByEmail: currentUser.username,
+        orderNo: job?.orderNo || '',
+        objectId: job?.object || '',
+        objectIdentification: job?.object || '',
+        customer: job?.customer || ''
       })
     });
     if (!resp.ok) throw new Error('Worker error: ' + resp.status);
-    const job = allJobs.find(j=>j.id===id);
     if (job) job.status = 'Atlikta';
     showToast('✓ Pažymėta kaip atlikta','success');
     setTimeout(() => loadData(), 2000);
   } catch(e) { showToast('Klaida: '+e.message,'error'); }
 }
 
-function filterJobs(filter, btn) {
+let currentMineFilter = 'Priskirta';
+let currentMineSearch = '';
+
+function filterMine(filter, btn) {
+  currentMineFilter = filter;
+  document.querySelectorAll('#tab-mine .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMine();
+}
+
+function searchMine(val) { currentMineSearch = val; renderMine(); }
+
+function renderMine() {
+  const list = document.getElementById('mineList');
+  const myEmail = currentUser?.username?.toLowerCase();
+  let filtered = allJobs.filter(j => {
+    const isMe = j.assignedToEmail?.toLowerCase() === myEmail;
+    const matchFilter = isMe && j.status === currentMineFilter;
+    const s = currentMineSearch.toLowerCase();
+    const matchSearch = !s || j.orderNo.toLowerCase().includes(s) || j.customer.toLowerCase().includes(s) || j.object.toLowerCase().includes(s);
+    return matchFilter && matchSearch;
+  });
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">${currentMineFilter === 'Priskirta' ? '👷' : '✅'}</div><h3>${currentMineFilter === 'Priskirta' ? 'Nėra aktyvių darbų' : 'Nėra atliktų darbų'}</h3></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(job => `
+    <div class="job-card" id="mcard-${job.id}">
+      <div class="job-top" onclick="toggleExpandMine('${job.id}')">
+        <div class="job-order">${job.orderNo}<br><span style="font-size:10px;color:var(--muted);font-weight:400">${job.shopNo}</span></div>
+        <div><div class="job-object">${job.object}</div><div class="job-customer">${job.customer} · ${job.objectPlace}</div></div>
+        <div class="job-methods">${job.methods.map(m=>`<span class="method-tag">${m}</span>`).join('')}</div>
+        <div class="job-date">${job.assignedDate}<br><span style="font-size:10px">Priskirta</span></div>
+        <div class="job-actions">
+          <span class="status ${job.status}">${statusLabel(job.status)}</span>
+          ${job.status === 'Priskirta' ? `<button class="btn btn-success" onclick="event.stopPropagation();confirmMarkDone('${job.id}')">✓ Atlikta</button>` : ''}
+          <button class="btn-expand" onclick="event.stopPropagation();toggleExpandMine('${job.id}')">▾</button>
+        </div>
+      </div>
+      <div class="job-details" id="mdetails-${job.id}">
+        <div class="details-grid">
+          <div><div class="detail-label">Užsakovas</div><div class="detail-value">${job.customer}</div></div>
+          <div><div class="detail-label">Objekto vieta</div><div class="detail-value">${job.objectPlace}</div></div>
+          <div><div class="detail-label">Atsakingas</div><div class="detail-value">${job.responsible}</div></div>
+          <div><div class="detail-label">Priskirta</div><div class="detail-value">${job.assignedDate}</div></div>
+          <div><div class="detail-label">Pastabos</div><div class="detail-value">${job.notes || '—'}</div></div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleExpandMine(id) {
+  document.getElementById('mcard-'+id)?.classList.toggle('expanded');
+}
   currentFilter = filter;
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -580,6 +651,7 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
+  if (tab === 'mine') renderMine();
 }
 
 // ── APPROVALS ───────────────────────────────────────────
@@ -668,7 +740,7 @@ function updateStats() {
   document.getElementById('statAssigned').textContent = allJobs.filter(j=>j.status==='Priskirta').length;
   document.getElementById('statDone').textContent = allJobs.filter(j=>j.status==='Atlikta').length;
   document.getElementById('badge-approvals').textContent = awaitApproval;
-  document.getElementById('badge-assignment').textContent = allJobs.filter(j=>j.status==='Patvirtinta').length;
+  document.getElementById('badge-mine').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===currentUser?.username?.toLowerCase() && j.status==='Priskirta').length;
 }
 
 function updateFilterCounts() {

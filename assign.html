@@ -555,12 +555,8 @@ function openAssign(id) {
   panel.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
-async function markDone(id) {
+async function markDone(id, atitinka=0, neatitinka=0, valandos=0, files=[]) {
   const job = allJobs.find(j=>j.id===id);
-  const atitinka = parseInt(document.getElementById('complete_atitinka')?.value) || 0;
-  const neatitinka = parseInt(document.getElementById('complete_neatitinka')?.value) || 0;
-  const valandos = parseFloat(document.getElementById('complete_valandos')?.value) || 0;
-  const files = droppedFiles;
 
   showToast('Siunčiama...','info');
   try {
@@ -589,15 +585,38 @@ async function markDone(id) {
     if (files.length > 0) {
       showToast('Įkeliami failai...','info');
       const token = await getSpToken();
-      // Server-relative path — must NOT be encodeURIComponent'd inside decodedurl=''
-      // SharePoint library "Bendrai naudojami dokumentai" has server-relative path below
       const folderRelPath = `/sites/MBL/Bendrai naudojami dokumentai/Formos/${job.orderNo}`;
+
+      // Ensure folder exists — create it if Power Automate hasn't made it yet
+      try {
+        const folderCheck = await fetch(`${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelPath}')`, {
+          headers: { Authorization: 'Bearer ' + token, Accept: 'application/json;odata=verbose' }
+        });
+        if (folderCheck.status === 404) {
+          // Folder missing — create it
+          const createResp = await fetch(`${SP_SITE_URL}/_api/web/folders`, {
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer ' + token,
+              Accept: 'application/json;odata=verbose',
+              'Content-Type': 'application/json;odata=verbose'
+            },
+            body: JSON.stringify({ '__metadata': { 'type': 'SP.Folder' }, 'ServerRelativeUrl': folderRelPath })
+          });
+          if (!createResp.ok) {
+            const ct = await createResp.text();
+            console.error('Folder create failed:', createResp.status, ct);
+            showToast('⚠ Nepavyko sukurti aplanko SharePoint', 'error');
+          } else {
+            console.log('Folder created:', folderRelPath);
+          }
+        }
+      } catch(fe) { console.warn('Folder check error:', fe); }
+
       let uploadErrors = 0;
       for (const file of files) {
         try {
           const arrayBuffer = await file.arrayBuffer();
-          // decodedurl='' expects the raw decoded path (spaces allowed, slashes must NOT be encoded)
-          // file.name must also be raw (not encoded) inside the OData add(url='') parameter
           const uploadUrl = `${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelPath}')/Files/add(url='${file.name}',overwrite=true)`;
           const uploadResp = await fetch(uploadUrl, {
             method: 'POST',
@@ -611,7 +630,6 @@ async function markDone(id) {
           if (!uploadResp.ok) {
             const errText = await uploadResp.text();
             console.error('File upload failed:', file.name, uploadResp.status, errText);
-            // Try to extract SP error message for toast
             let spErr = uploadResp.status;
             try { spErr = JSON.parse(errText)?.error?.message?.value || uploadResp.status; } catch{}
             showToast(`⚠ Klaida (${file.name}): ${spErr}`, 'error');
@@ -898,10 +916,13 @@ function resetFileUpload() {
 
 function confirmOk() {
   const action = pendingAction;
-  console.log('confirmOk called, action:', action);
-  closeConfirm();
-  if (action) action();
-  else console.log('No action to run!');
+  // Capture completion form values BEFORE closeConfirm() destroys the dialog DOM
+  const capturedAtitinka   = parseInt(document.getElementById('complete_atitinka')?.value)  || 0;
+  const capturedNeatitinka = parseInt(document.getElementById('complete_neatitinka')?.value) || 0;
+  const capturedValandos   = parseFloat(document.getElementById('complete_valandos')?.value) || 0;
+  const capturedFiles      = [...droppedFiles];
+  closeConfirm(); // wipes DOM + resets droppedFiles
+  if (action) action(capturedAtitinka, capturedNeatitinka, capturedValandos, capturedFiles);
 }
 
 // Updated action wrappers with confirmations
@@ -993,7 +1014,7 @@ function confirmMarkDone(id) {
   const okBtn = document.getElementById('confirmOkBtn');
   okBtn.textContent = '✓ Užbaigti';
   okBtn.className = 'btn btn-success';
-  pendingAction = () => markDone(id);
+  pendingAction = (atitinka, neatitinka, valandos, files) => markDone(id, atitinka, neatitinka, valandos, files);
   document.getElementById('confirmOverlay').classList.add('show');
 }
 

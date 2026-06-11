@@ -900,6 +900,21 @@ async function submitForm(){
   });
   if(!valid){ document.querySelector('[required][style*="red"]')?.scrollIntoView({behavior:'smooth',block:'center'}); showToast('Užpildykite privalomus laukus','error'); return; }
 
+  // Validate: at least one method must be selected in section 2
+  const anyMethod = document.querySelectorAll('.method-checkbox:checked').length > 0;
+  if(!anyMethod){
+    const sec2 = document.querySelector('.sec-head .sec-title');
+    const sec2head = sec2?.closest('.sec-head');
+    if(sec2head){ sec2head.style.background='rgba(192,57,43,0.12)'; sec2head.style.borderBottom='1px solid rgba(192,57,43,0.4)'; }
+    document.querySelector('.methods-group')?.scrollIntoView({behavior:'smooth',block:'center'});
+    showToast('Pasirinkite bent vieną bandymo metodą','error');
+    // Reset highlight when any checkbox is ticked
+    document.querySelectorAll('.method-checkbox').forEach(cb=>{
+      cb.addEventListener('change', function(){ if(this.checked){ if(sec2head){sec2head.style.background='';sec2head.style.borderBottom='';} }}, {once:true});
+    });
+    return;
+  }
+
 
 
   const btn = document.getElementById('submitBtn');

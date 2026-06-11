@@ -163,7 +163,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .comment-input:focus{outline:none;border-color:var(--blue-accent);}
 .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;display:none;align-items:center;justify-content:center;padding:16px;}
 .confirm-overlay.show{display:flex;}
-.confirm-card{background:var(--white);border-radius:12px;padding:28px 32px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.confirm-card{background:var(--white);border-radius:12px;padding:28px 32px;max-width:600px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
 .confirm-icon{font-size:32px;margin-bottom:12px;text-align:center;}
 .confirm-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;text-align:center;}
 .confirm-msg{font-size:13px;color:var(--muted);text-align:center;line-height:1.5;margin-bottom:20px;}
@@ -912,13 +912,15 @@ function fileIcon(name) {
 
 function toggleDefektas(val) {
   const row = document.getElementById('defektas_row');
-  const sel = document.getElementById('complete_defektas');
   if (!row) return;
   if (parseInt(val) > 0) {
     row.style.display = 'block';
   } else {
     row.style.display = 'none';
-    if (sel) { sel.value = ''; sel.style.border = '1px solid var(--border)'; }
+    // Uncheck all defektas checkboxes and reset border
+    document.querySelectorAll('.defektas_cb').forEach(cb => cb.checked = false);
+    const box = document.getElementById('defektas_checkboxes');
+    if (box) box.style.border = '1px solid var(--border)';
   }
 }
 
@@ -937,14 +939,14 @@ function confirmOk() {
   const capturedNeatitinka  = parseInt(document.getElementById('complete_neatitinka')?.value)  || 0;
   const capturedRemontuotos = parseInt(document.getElementById('complete_remontuotos')?.value) || 0;
   const capturedValandos    = parseFloat(document.getElementById('complete_valandos')?.value)  || 0;
-  const capturedDefektas    = document.getElementById('complete_defektas')?.value || '';
+  const capturedDefektas    = [...document.querySelectorAll('.defektas_cb:checked')].map(cb => cb.value).join(', ');
   const capturedKomentarai  = document.getElementById('complete_komentarai')?.value || '';
   const capturedAtlikejai   = [...document.querySelectorAll('.atlikejai_cb:checked')].map(cb => cb.value);
   const capturedFiles       = [...droppedFiles];
-  // Validate: defektas required when neatitinka > 0
+  // Validate: at least one defektas required when neatitinka > 0
   if (capturedNeatitinka > 0 && !capturedDefektas) {
-    const sel = document.getElementById('complete_defektas');
-    if (sel) { sel.style.border = '2px solid #e05252'; sel.focus(); }
+    const box = document.getElementById('defektas_checkboxes');
+    if (box) { box.style.border = '2px solid #e05252'; box.scrollIntoView({block:'nearest'}); }
     return;
   }
   closeConfirm(); // wipes DOM + resets droppedFiles
@@ -1034,23 +1036,14 @@ function confirmMarkDone(id) {
     </div>
 
     <div id="defektas_row" style="display:none;margin-top:10px;text-align:left">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Defektas <span style="color:#e05252">*</span></div>
-      <select id="complete_defektas" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:white;color:#1a2a3a">
-        <option value="">— Pasirinkite defektą —</option>
-        <option>Šlakai, Purslai (Apvalymas)</option>
-        <option>Perteklinis įvirinimas, Restartai</option>
-        <option>Nepravirinimai, nesulydymai</option>
-        <option>Įpjovos</option>
-        <option>Poros</option>
-        <option>Nepakankamas užpildymas</option>
-        <option>Įpjovimai, mech. pažeidimai</option>
-        <option>Netinkami siūlės kraštai (Perėjimai)</option>
-        <option>Šaknies įdubimai</option>
-        <option>Įtrūkiai</option>
-        <option>Pradeginimai</option>
-        <option>Siūlės asimetrija</option>
-        <option>Briaunų nesutapimas</option>
-      </select>
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Defektas <span style="color:#e05252">*</span></div>
+      <div id="defektas_checkboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;background:var(--blue-light);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;">
+        ${['Šlakai, Purslai (Apvalymas)','Perteklinis įvirinimas, Restartai','Nepravirinimai, nesulydymai','Įpjovos','Poros','Nepakankamas užpildymas','Įpjovimai, mech. pažeidimai','Netinkami siūlės kraštai (Perėjimai)','Šaknies įdubimai','Įtrūkiai','Pradeginimai','Siūlės asimetrija','Briaunų nesutapimas'].map(d =>
+          `<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0">
+            <input type="checkbox" class="defektas_cb" value="${d}" style="accent-color:var(--blue);width:13px;height:13px;flex-shrink:0;" onchange="if(this.checked){const b=document.getElementById('defektas_checkboxes');if(b)b.style.border='1px solid var(--border)'}">
+            <span>${d}</span>
+          </label>`).join('')}
+      </div>
     </div>
 
     <div style="margin-top:10px;text-align:left">
@@ -1059,9 +1052,14 @@ function confirmMarkDone(id) {
         <span style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;white-space:nowrap">Atlikėjas 1</span>
         <span style="color:var(--text)">${currentUser.name || currentUser.username}</span>
       </div>
-      ${otherEngineers.length > 0 ? `<div style="background:var(--blue-light);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;max-height:120px;overflow-y:auto;">
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:6px">Papildomi atlikėjai (pasirinkite)</div>
-        ${engCheckboxes}
+      ${otherEngineers.length > 0 ? `<div>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer;margin-bottom:6px;color:var(--blue-accent);font-weight:600">
+          <input type="checkbox" id="toggle_papildomi" style="accent-color:var(--blue);width:14px;height:14px;" onchange="document.getElementById('papildomi_list').style.display=this.checked?'block':'none'">
+          + Pridėti papildomus atlikėjus
+        </label>
+        <div id="papildomi_list" style="display:none;background:var(--blue-light);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;max-height:120px;overflow-y:auto;">
+          ${engCheckboxes}
+        </div>
       </div>` : ''}
     </div>
 

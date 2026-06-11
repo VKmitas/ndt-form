@@ -555,7 +555,7 @@ function openAssign(id) {
   panel.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
-async function markDone(id, atitinka=0, neatitinka=0, valandos=0, files=[]) {
+async function markDone(id, atitinka=0, neatitinka=0, defektas='', files=[]) {
   const job = allJobs.find(j=>j.id===id);
 
   showToast('Siunčiama...','info');
@@ -576,7 +576,7 @@ async function markDone(id, atitinka=0, neatitinka=0, valandos=0, files=[]) {
         approvedBy: currentUser.username,
         atitinka: atitinka,
         neatitinka: neatitinka,
-        darboValandos: valandos
+        defektas: defektas
       })
     });
     if (!resp.ok) throw new Error('Worker error: ' + resp.status);
@@ -919,10 +919,10 @@ function confirmOk() {
   // Capture completion form values BEFORE closeConfirm() destroys the dialog DOM
   const capturedAtitinka   = parseInt(document.getElementById('complete_atitinka')?.value)  || 0;
   const capturedNeatitinka = parseInt(document.getElementById('complete_neatitinka')?.value) || 0;
-  const capturedValandos   = parseFloat(document.getElementById('complete_valandos')?.value) || 0;
+  const capturedDefektas   = document.getElementById('complete_defektas')?.value || '';
   const capturedFiles      = [...droppedFiles];
   closeConfirm(); // wipes DOM + resets droppedFiles
-  if (action) action(capturedAtitinka, capturedNeatitinka, capturedValandos, capturedFiles);
+  if (action) action(capturedAtitinka, capturedNeatitinka, capturedDefektas, capturedFiles);
 }
 
 // Updated action wrappers with confirmations
@@ -978,7 +978,7 @@ function confirmMarkDone(id) {
   det.style.display = 'block';
   det.innerHTML = `
     <div style="text-align:left;margin-bottom:8px;font-size:13px;color:var(--text)">${job.orderNo} · ${job.object}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:left">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Atitinka ✓</div>
         <input type="number" id="complete_atitinka" min="0" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
@@ -987,10 +987,25 @@ function confirmMarkDone(id) {
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Neatitinka ✗</div>
         <input type="number" id="complete_neatitinka" min="0" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
       </div>
-      <div>
-        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Darbo val.</div>
-        <input type="number" id="complete_valandos" min="0" step="0.5" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
-      </div>
+    </div>
+    <div style="margin-top:10px;text-align:left">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Defektas</div>
+      <select id="complete_defektas" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:white;color:#1a2a3a">
+        <option value="">— Pasirinkite defektą —</option>
+        <option>Šlakai, Purslai (Apvalymas)</option>
+        <option>Perteklinis įvirinimas, Restartai</option>
+        <option>Nepravirinimai, nesulydymai</option>
+        <option>Įpjovos</option>
+        <option>Poros</option>
+        <option>Nepakankamas užpildymas</option>
+        <option>Įpjovimai, mech. pažeidimai</option>
+        <option>Netinkami siūlės kraštai (Perėjimai)</option>
+        <option>Šaknies įdubimai</option>
+        <option>Įtrūkiai</option>
+        <option>Pradeginimai</option>
+        <option>Siūlės asimetrija</option>
+        <option>Briaunų nesutapimas</option>
+      </select>
     </div>
     <div style="margin-top:12px;text-align:left">
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Failai / Files</div>
@@ -1014,7 +1029,7 @@ function confirmMarkDone(id) {
   const okBtn = document.getElementById('confirmOkBtn');
   okBtn.textContent = '✓ Užbaigti';
   okBtn.className = 'btn btn-success';
-  pendingAction = (atitinka, neatitinka, valandos, files) => markDone(id, atitinka, neatitinka, valandos, files);
+  pendingAction = (atitinka, neatitinka, defektas, files) => markDone(id, atitinka, neatitinka, defektas, files);
   document.getElementById('confirmOverlay').classList.add('show');
 }
 

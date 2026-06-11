@@ -555,7 +555,7 @@ function openAssign(id) {
   panel.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
-async function markDone(id, atitinka=0, neatitinka=0, defektas='', files=[]) {
+async function markDone(id, atitinka=0, neatitinka=0, defektas='', valandos=0, remontuotos=0, atlikejai=[], komentarai='', files=[]) {
   const job = allJobs.find(j=>j.id===id);
 
   showToast('Siunčiama...','info');
@@ -576,7 +576,11 @@ async function markDone(id, atitinka=0, neatitinka=0, defektas='', files=[]) {
         approvedBy: currentUser.username,
         atitinka: atitinka,
         neatitinka: neatitinka,
-        defektas: defektas
+        defektas: defektas,
+        darboValandos: valandos,
+        remontuotos: remontuotos,
+        atlikejai: atlikejai,
+        komentarai: komentarai
       })
     });
     if (!resp.ok) throw new Error('Worker error: ' + resp.status);
@@ -928,19 +932,23 @@ function resetFileUpload() {
 
 function confirmOk() {
   const action = pendingAction;
-  // Capture completion form values BEFORE closeConfirm() destroys the dialog DOM
-  const capturedAtitinka   = parseInt(document.getElementById('complete_atitinka')?.value)  || 0;
-  const capturedNeatitinka = parseInt(document.getElementById('complete_neatitinka')?.value) || 0;
-  const capturedDefektas   = document.getElementById('complete_defektas')?.value || '';
-  const capturedFiles      = [...droppedFiles];
+  // Capture all completion form values BEFORE closeConfirm() destroys the dialog DOM
+  const capturedAtitinka    = parseInt(document.getElementById('complete_atitinka')?.value)    || 0;
+  const capturedNeatitinka  = parseInt(document.getElementById('complete_neatitinka')?.value)  || 0;
+  const capturedRemontuotos = parseInt(document.getElementById('complete_remontuotos')?.value) || 0;
+  const capturedValandos    = parseFloat(document.getElementById('complete_valandos')?.value)  || 0;
+  const capturedDefektas    = document.getElementById('complete_defektas')?.value || '';
+  const capturedKomentarai  = document.getElementById('complete_komentarai')?.value || '';
+  const capturedAtlikejai   = [...document.querySelectorAll('.atlikejai_cb:checked')].map(cb => cb.value);
+  const capturedFiles       = [...droppedFiles];
   // Validate: defektas required when neatitinka > 0
   if (capturedNeatitinka > 0 && !capturedDefektas) {
     const sel = document.getElementById('complete_defektas');
     if (sel) { sel.style.border = '2px solid #e05252'; sel.focus(); }
-    return; // block close
+    return;
   }
   closeConfirm(); // wipes DOM + resets droppedFiles
-  if (action) action(capturedAtitinka, capturedNeatitinka, capturedDefektas, capturedFiles);
+  if (action) action(capturedAtitinka, capturedNeatitinka, capturedDefektas, capturedValandos, capturedRemontuotos, capturedAtlikejai, capturedKomentarai, capturedFiles);
 }
 
 // Updated action wrappers with confirmations
@@ -994,9 +1002,19 @@ function confirmMarkDone(id) {
   document.getElementById('confirmMsg').textContent = '';
   const det = document.getElementById('confirmDetail');
   det.style.display = 'block';
+  // Build engineers checkboxes (exclude current user)
+  const otherEngineers = engineers.filter(e => e.email.toLowerCase() !== currentUser.username.toLowerCase());
+  const engCheckboxes = otherEngineers.map(e =>
+    `<label style="display:flex;align-items:center;gap:7px;font-size:12px;padding:4px 0;cursor:pointer;">
+      <input type="checkbox" class="atlikejai_cb" value="${e.name}|${e.role}" style="accent-color:var(--blue);width:14px;height:14px;flex-shrink:0;">
+      <span>${e.name} <span style="color:var(--muted);font-size:11px;">· ${e.role}</span></span>
+    </label>`
+  ).join('');
+
   det.innerHTML = `
-    <div style="text-align:left;margin-bottom:8px;font-size:13px;color:var(--text)">${job.orderNo} · ${job.object}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
+    <div style="text-align:left;margin-bottom:10px;font-size:13px;color:var(--text);font-weight:600">${job.orderNo} · ${job.object}</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;text-align:left">
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Atitinka ✓</div>
         <input type="number" id="complete_atitinka" min="0" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
@@ -1005,7 +1023,16 @@ function confirmMarkDone(id) {
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Neatitinka ✗</div>
         <input type="number" id="complete_neatitinka" min="0" value="0" oninput="toggleDefektas(this.value)" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
       </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Remontuotos</div>
+        <input type="number" id="complete_remontuotos" min="0" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Darbo val.</div>
+        <input type="number" id="complete_valandos" min="0" step="0.5" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
+      </div>
     </div>
+
     <div id="defektas_row" style="display:none;margin-top:10px;text-align:left">
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Defektas <span style="color:#e05252">*</span></div>
       <select id="complete_defektas" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:white;color:#1a2a3a">
@@ -1025,21 +1052,38 @@ function confirmMarkDone(id) {
         <option>Briaunų nesutapimas</option>
       </select>
     </div>
-    <div style="margin-top:12px;text-align:left">
+
+    <div style="margin-top:10px;text-align:left">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Atlikėjai</div>
+      <div style="background:var(--blue-light);border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;margin-bottom:6px;font-size:12px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;white-space:nowrap">Atlikėjas 1</span>
+        <span style="color:var(--text)">${currentUser.name || currentUser.username}</span>
+      </div>
+      ${otherEngineers.length > 0 ? `<div style="background:var(--blue-light);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;max-height:120px;overflow-y:auto;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:6px">Papildomi atlikėjai (pasirinkite)</div>
+        ${engCheckboxes}
+      </div>` : ''}
+    </div>
+
+    <div style="margin-top:10px;text-align:left">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Komentarai</div>
+      <textarea id="complete_komentarai" rows="2" placeholder="Pastabos apie atliktus darbus..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px;resize:vertical"></textarea>
+    </div>
+
+    <div style="margin-top:10px;text-align:left">
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Failai / Files</div>
       <div id="dropzone"
-        style="border:2px dashed var(--blue-accent);border-radius:8px;padding:24px 16px;text-align:center;cursor:pointer;background:var(--blue-light);transition:all .15s;"
+        style="border:2px dashed var(--blue-accent);border-radius:8px;padding:18px 16px;text-align:center;cursor:pointer;background:var(--blue-light);transition:all .15s;"
         ondragover="event.preventDefault();this.style.background='#d0e4f5';this.style.borderColor='var(--blue)'"
         ondragleave="this.style.background='var(--blue-light)';this.style.borderColor='var(--blue-accent)'"
         ondrop="event.preventDefault();this.style.background='var(--blue-light)';this.style.borderColor='var(--blue-accent)';handleDrop(event)">
-        <div style="font-size:28px;margin-bottom:8px">☁️</div>
-        <div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:4px">Vilkite failus čia / Drag & Drop files here</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">arba / or</div>
+        <div style="font-size:22px;margin-bottom:6px">☁️</div>
+        <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:6px">Vilkite failus čia arba</div>
         <button type="button" onclick="document.getElementById('complete_files').click()"
-          style="font-family:var(--font);font-size:12px;font-weight:600;padding:7px 18px;border:2px solid var(--blue-accent);border-radius:var(--radius);background:var(--white);color:var(--blue-accent);cursor:pointer;">
-          Pasirinkti failus / Browse Files
+          style="font-family:var(--font);font-size:12px;font-weight:600;padding:6px 16px;border:2px solid var(--blue-accent);border-radius:var(--radius);background:var(--white);color:var(--blue-accent);cursor:pointer;">
+          Pasirinkti failus
         </button>
-        <div style="font-size:10px;color:var(--muted);margin-top:10px">PDF, JPG, PNG, Word, Excel</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:8px">PDF, JPG, PNG, Word, Excel</div>
         <input type="file" id="complete_files" multiple accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" style="display:none" onchange="updateFileList()">
       </div>
       <div id="file_list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;"></div>
@@ -1047,7 +1091,7 @@ function confirmMarkDone(id) {
   const okBtn = document.getElementById('confirmOkBtn');
   okBtn.textContent = '✓ Užbaigti';
   okBtn.className = 'btn btn-success';
-  pendingAction = (atitinka, neatitinka, defektas, files) => markDone(id, atitinka, neatitinka, defektas, files);
+  pendingAction = (atitinka, neatitinka, defektas, valandos, remontuotos, atlikejai, komentarai, files) => markDone(id, atitinka, neatitinka, defektas, valandos, remontuotos, atlikejai, komentarai, files);
   document.getElementById('confirmOverlay').classList.add('show');
 }
 

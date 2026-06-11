@@ -942,7 +942,10 @@ function confirmOk() {
   const capturedDefektas    = [...document.querySelectorAll('.defektas_cb:checked')].map(cb => cb.value).join(', ');
   const capturedKomentarai  = document.getElementById('complete_komentarai')?.value || '';
   const primaryAtlikejas    = currentUser.name || currentUser.username;
-  const capturedAtlikejai   = [primaryAtlikejas, ...[...document.querySelectorAll('.atlikejai_cb:checked')].map(cb => cb.value.replace('|', ' · '))];
+  const capturedAtlikejai   = [primaryAtlikejas, ...[...document.querySelectorAll('.atlikejai_cb:checked')].map(cb => {
+    const [n, r] = cb.value.split('|');
+    return r && r.trim() && r.trim() !== '-' ? n.trim() + ' · ' + r.trim() : n.trim();
+  })];
   const capturedFiles       = [...droppedFiles];
   // Validate: at least one defektas required when neatitinka > 0
   if (capturedNeatitinka > 0 && !capturedDefektas) {

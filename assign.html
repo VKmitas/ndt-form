@@ -941,7 +941,8 @@ function confirmOk() {
   const capturedValandos    = parseFloat(document.getElementById('complete_valandos')?.value)  || 0;
   const capturedDefektas    = [...document.querySelectorAll('.defektas_cb:checked')].map(cb => cb.value).join(', ');
   const capturedKomentarai  = document.getElementById('complete_komentarai')?.value || '';
-  const capturedAtlikejai   = [...document.querySelectorAll('.atlikejai_cb:checked')].map(cb => cb.value);
+  const primaryAtlikejas    = currentUser.name || currentUser.username;
+  const capturedAtlikejai   = [primaryAtlikejas, ...[...document.querySelectorAll('.atlikejai_cb:checked')].map(cb => cb.value.replace('|', ' · '))];
   const capturedFiles       = [...droppedFiles];
   // Validate: at least one defektas required when neatitinka > 0
   if (capturedNeatitinka > 0 && !capturedDefektas) {

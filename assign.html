@@ -906,6 +906,18 @@ function fileIcon(name) {
   return '📎';
 }
 
+function toggleDefektas(val) {
+  const row = document.getElementById('defektas_row');
+  const sel = document.getElementById('complete_defektas');
+  if (!row) return;
+  if (parseInt(val) > 0) {
+    row.style.display = 'block';
+  } else {
+    row.style.display = 'none';
+    if (sel) { sel.value = ''; sel.style.border = '1px solid var(--border)'; }
+  }
+}
+
 function resetFileUpload() {
   droppedFiles = [];
   const fl = document.getElementById('file_list');
@@ -921,6 +933,12 @@ function confirmOk() {
   const capturedNeatitinka = parseInt(document.getElementById('complete_neatitinka')?.value) || 0;
   const capturedDefektas   = document.getElementById('complete_defektas')?.value || '';
   const capturedFiles      = [...droppedFiles];
+  // Validate: defektas required when neatitinka > 0
+  if (capturedNeatitinka > 0 && !capturedDefektas) {
+    const sel = document.getElementById('complete_defektas');
+    if (sel) { sel.style.border = '2px solid #e05252'; sel.focus(); }
+    return; // block close
+  }
   closeConfirm(); // wipes DOM + resets droppedFiles
   if (action) action(capturedAtitinka, capturedNeatitinka, capturedDefektas, capturedFiles);
 }
@@ -985,11 +1003,11 @@ function confirmMarkDone(id) {
       </div>
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Neatitinka ✗</div>
-        <input type="number" id="complete_neatitinka" min="0" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
+        <input type="number" id="complete_neatitinka" min="0" value="0" oninput="toggleDefektas(this.value)" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
       </div>
     </div>
-    <div style="margin-top:10px;text-align:left">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Defektas</div>
+    <div id="defektas_row" style="display:none;margin-top:10px;text-align:left">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Defektas <span style="color:#e05252">*</span></div>
       <select id="complete_defektas" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px;background:white;color:#1a2a3a">
         <option value="">— Pasirinkite defektą —</option>
         <option>Šlakai, Purslai (Apvalymas)</option>

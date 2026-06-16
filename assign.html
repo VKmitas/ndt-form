@@ -343,6 +343,7 @@ const TENANT_ID    = 'f300c84f-87f0-4d9e-8284-1e36dbe06fbe';
 const SP_SITE_URL  = 'https://achemosgrupelt.sharepoint.com/sites/MBL';
 const WORKER_URL   = 'https://ndt.v-kmitas.workers.dev';
 const FLOW_APPROVE = 'https://ndt.v-kmitas.workers.dev/approve';
+const FLOW_REVIEW  = 'https://970e788dfa91e4068cfc63a7a3afe7.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a2b683695ebf4eedaff38c9c6e38ccb4/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ktbhv1HgQgX5OQetSbrGZFfqs1QwvAilF-EHOL9_KIw';
 const SCOPES = ['User.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Write'];
 
 let canApprove = false;
@@ -864,7 +865,7 @@ async function reviewJob(id, action) {
   }
   showToast('Siunčiama...','info');
   try {
-    const resp = await fetch(FLOW_APPROVE, {
+    const resp = await fetch(FLOW_REVIEW, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

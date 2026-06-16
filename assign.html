@@ -86,6 +86,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .status.Priskirta{background:var(--blue-light);color:var(--blue);}
 .status.Atlikta{background:var(--green-light);color:var(--green);}
 .status.Pateikta{background:#f3f0ff;color:#6b21a8;}
+.status.Tikrinama{background:#fef3c7;color:#92400e;}
+.status.Grąžinta{background:#fee2e2;color:#991b1b;}
 .btn{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 14px;border-radius:var(--radius);border:none;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .btn-primary{background:var(--blue);color:#fff;}
 .btn-primary:hover{background:var(--blue-mid);}
@@ -459,6 +461,13 @@ async function loadData() {
       assignedDate:    i.AssignedDate ? i.AssignedDate.substring(0,10) : '',
       responsible:     i.field_112 || '',
       notes:           i.field_114 || '',
+      atitinka:        i.Atitinka || 0,
+      neatitinka:      i.Neatitinka || 0,
+      defektas:        i.Defektas || '',
+      atlikejai:       i.Atlikejai || '',
+      komentarai:      i.Komentarai_Atlikus || '',
+      completedBy:     i.CompletedBy || '',
+      completedDate:   i.CompletedDate ? i.CompletedDate.substring(0,10) : '',
     })).sort((a,b) => Number(b.id) - Number(a.id));
 
     updateStats();
@@ -528,7 +537,7 @@ function renderJobs() {
 }
 
 function statusLabel(s) {
-  return {Patvirtinta:'⏳ Laukia priskyrimo', Priskirta:'👷 Priskirta', Atlikta:'✅ Atlikta', Pateikta:'📋 Pateikta'}[s] || s;
+  return {Patvirtinta:'⏳ Laukia priskyrimo', Priskirta:'👷 Priskirta', Atlikta:'✅ Atlikta', Pateikta:'📋 Pateikta', Tikrinama:'🔍 Tikrinama', Grąžinta:'↩️ Grąžinta'}[s] || s;
 }
 
 function toggleExpand(id) {
@@ -736,16 +745,26 @@ function switchTab(tab, btn) {
 // ── APPROVALS ───────────────────────────────────────────
 function renderApprovals() {
   const list = document.getElementById('approvalsList');
+  const s = approvalSearch ? approvalSearch.toLowerCase() : '';
+
   let pending = allJobs.filter(j => j.status === 'Pateikta');
-  if (approvalSearch) {
-    const s = approvalSearch.toLowerCase();
-    pending = pending.filter(j => j.orderNo.toLowerCase().includes(s) || j.customer.toLowerCase().includes(s) || j.object.toLowerCase().includes(s));
+  let tikrinama = allJobs.filter(j => j.status === 'Tikrinama');
+  if (s) {
+    const f = j => j.orderNo.toLowerCase().includes(s) || j.customer.toLowerCase().includes(s) || j.object.toLowerCase().includes(s);
+    pending = pending.filter(f);
+    tikrinama = tikrinama.filter(f);
   }
+
+  let html = '';
+
+  // ── Section 1: Form approvals ─────────────────────────────
+  html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;padding-bottom:6px;border-bottom:2px solid var(--border)">
+    📋 Paraiškų tvirtinimas <span style="font-weight:400;color:var(--muted)">(${pending.length})</span>
+  </div>`;
   if (!pending.length) {
-    list.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><h3>Nėra laukiančių patvirtinimo</h3><p>Visos paraiškos peržiūrėtos.</p></div>`;
-    return;
-  }
-  list.innerHTML = pending.map(job => `
+    html += `<div class="empty" style="padding:20px 0"><div class="empty-icon" style="font-size:24px">✅</div><p style="color:var(--muted);font-size:13px">Nėra laukiančių patvirtinimo</p></div>`;
+  } else {
+    html += pending.map(job => `
     <div class="approval-card" id="acard-${job.id}">
       <div class="approval-top" onclick="toggleApproval('${job.id}')">
         <div class="job-order">${job.orderNo}<br><span style="font-size:10px;color:var(--muted);font-weight:400">${job.shopNo}</span></div>
@@ -778,6 +797,91 @@ function renderApprovals() {
         </div>` : ''}
       </div>
     </div>`).join('');
+  }
+
+  // ── Section 2: Completion reviews ────────────────────────
+  html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--border)">
+    🔍 Darbų kokybės tikrinimas <span style="font-weight:400;color:var(--muted)">(${tikrinama.length})</span>
+  </div>`;
+  if (!tikrinama.length) {
+    html += `<div class="empty" style="padding:20px 0"><div class="empty-icon" style="font-size:24px">🔍</div><p style="color:var(--muted);font-size:13px">Nėra darbų laukiančių patikrinimo</p></div>`;
+  } else {
+    html += tikrinama.map(job => `
+    <div class="approval-card" id="rcard-${job.id}">
+      <div class="approval-top" onclick="toggleReview('${job.id}')">
+        <div class="job-order">${job.orderNo}<br><span style="font-size:10px;color:var(--muted);font-weight:400">${job.shopNo}</span></div>
+        <div>
+          <div class="job-object">${job.object}</div>
+          <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;">Atliko: ${job.atlikejai || job.assignedTo} · ${job.completedDate || '—'}</div>
+        </div>
+        <div class="approval-actions">
+          ${canApprove ? `
+            <button class="btn-approve" onclick="event.stopPropagation();reviewJob('${job.id}','approve')">✓ Patvirtinti</button>
+            <button class="btn-reject" onclick="event.stopPropagation();toggleReview('${job.id}')">↩ Grąžinti</button>
+          ` : `<span class="status Tikrinama">🔍 Tikrinama</span>`}
+          <button class="btn-expand" onclick="event.stopPropagation();toggleReview('${job.id}')">▾</button>
+        </div>
+      </div>
+      <div class="approval-detail" id="rdetail-${job.id}">
+        <div class="details-grid">
+          <div><div class="detail-label">Užsakovas</div><div class="detail-value">${job.customer}</div></div>
+          <div><div class="detail-label">Objektas</div><div class="detail-value">${job.object}</div></div>
+          <div><div class="detail-label">Atlikėjai</div><div class="detail-value">${job.atlikejai || '—'}</div></div>
+          <div><div class="detail-label">Atlikimo data</div><div class="detail-value">${job.completedDate || '—'}</div></div>
+          <div><div class="detail-label">Atitinka</div><div class="detail-value">${job.atitinka}</div></div>
+          <div><div class="detail-label">Neatitinka</div><div class="detail-value">${job.neatitinka}</div></div>
+          ${job.defektas ? `<div style="grid-column:1/-1"><div class="detail-label">Defektas</div><div class="detail-value">${job.defektas}</div></div>` : ''}
+          ${job.komentarai ? `<div style="grid-column:1/-1"><div class="detail-label">Komentarai</div><div class="detail-value">${job.komentarai}</div></div>` : ''}
+        </div>
+        ${canApprove ? `
+        <div class="comment-row">
+          <input type="text" class="comment-input" id="rcomment-${job.id}" placeholder="Grąžinimo priežastis...">
+          <button class="btn-reject" onclick="reviewJob('${job.id}','reject')">↩ Grąžinti su komentaru</button>
+        </div>` : ''}
+      </div>
+    </div>`).join('');
+  }
+
+  list.innerHTML = html;
+}
+
+function toggleReview(id) {
+  const card = document.getElementById('rcard-'+id);
+  const detail = document.getElementById('rdetail-'+id);
+  if (card) card.classList.toggle('expanded');
+}
+
+async function reviewJob(id, action) {
+  const job = allJobs.find(j=>j.id===id);
+  if (!job) return;
+  const comment = document.getElementById('rcomment-'+id)?.value || '';
+  if (action === 'reject' && !comment.trim()) {
+    const inp = document.getElementById('rcomment-'+id);
+    if (inp) { inp.style.border='2px solid #e05252'; inp.focus(); }
+    showToast('Įveskite grąžinimo priežastį','error');
+    return;
+  }
+  showToast('Siunčiama...','info');
+  try {
+    const resp = await fetch(FLOW_APPROVE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        itemId: id,
+        action: action === 'approve' ? 'completeApprove' : 'completeReject',
+        approvedBy: currentUser.username,
+        comment: comment,
+        assignedToEmail: job.assignedToEmail,
+        orderNo: job.orderNo,
+        objectId: job.object
+      })
+    });
+    if (!resp.ok && resp.status !== 202) throw new Error('Flow error: ' + resp.status);
+    job.status = action === 'approve' ? 'Atlikta' : 'Grąžinta';
+    showToast(action === 'approve' ? '✓ Darbai patvirtinti!' : '↩ Grąžinta inžinieriui', action === 'approve' ? 'success' : 'error');
+    setTimeout(() => loadData(), 2000);
+  } catch(e) { showToast('Klaida: '+e.message,'error'); }
 }
 
 function toggleApproval(id) {
@@ -813,7 +917,7 @@ async function approveJob(id, action) {
 }
 
 function updateStats() {
-  const awaitApproval = allJobs.filter(j=>j.status==='Pateikta').length;
+  const awaitApproval = allJobs.filter(j=>j.status==='Pateikta' || j.status==='Tikrinama').length;
   document.getElementById('statAwaitApproval').textContent = awaitApproval;
   document.getElementById('statPending').textContent = allJobs.filter(j=>j.status==='Patvirtinta').length;
   document.getElementById('statAssigned').textContent = allJobs.filter(j=>j.status==='Priskirta').length;

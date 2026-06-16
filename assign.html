@@ -309,6 +309,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div class="tab-panel" id="tab-mine">
   <div class="filters">
     <button class="filter-btn active" onclick="filterMine('Priskirta',this)">Aktyvūs <span class="filter-count" id="fc-mine">0</span></button>
+    <button class="filter-btn" onclick="filterMine('Tikrinama',this)">Tikrinama <span class="filter-count" id="fc-mine_tikrinama">0</span></button>
+    <button class="filter-btn" onclick="filterMine('Grąžinta',this)">Grąžinta <span class="filter-count" id="fc-mine_grazinta">0</span></button>
     <button class="filter-btn" onclick="filterMine('Atlikta',this)">Atlikti <span class="filter-count" id="fc-mine_done">0</span></button>
     <div class="search-box">
       <span class="search-icon">🔍</span>
@@ -343,7 +345,7 @@ const TENANT_ID    = 'f300c84f-87f0-4d9e-8284-1e36dbe06fbe';
 const SP_SITE_URL  = 'https://achemosgrupelt.sharepoint.com/sites/MBL';
 const WORKER_URL   = 'https://ndt.v-kmitas.workers.dev';
 const FLOW_APPROVE = 'https://ndt.v-kmitas.workers.dev/approve';
-const FLOW_REVIEW  = 'https://970e788dfa91e4068cfc63a7a3afe7.48.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a2b683695ebf4eedaff38c9c6e38ccb4/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ktbhv1HgQgX5OQetSbrGZFfqs1QwvAilF-EHOL9_KIw';
+const FLOW_REVIEW  = 'https://ndt.v-kmitas.workers.dev/review';
 const SCOPES = ['User.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Write'];
 
 let canApprove = false;
@@ -467,6 +469,7 @@ async function loadData() {
       defektas:        i.Defektas || '',
       atlikejai:       i.Atlikejai || '',
       komentarai:      i.Komentarai_Atlikus || '',
+      reviewComment:   i.ReviewComment || '',
       completedBy:     i.CompletedBy || '',
       completedDate:   i.CompletedDate ? i.CompletedDate.substring(0,10) : '',
     })).sort((a,b) => Number(b.id) - Number(a.id));
@@ -691,20 +694,26 @@ function renderMine() {
     const matchSearch = !s || j.orderNo.toLowerCase().includes(s) || j.customer.toLowerCase().includes(s) || j.object.toLowerCase().includes(s);
     return matchFilter && matchSearch;
   });
+  const emptyIcons = { Priskirta:'👷', Atlikta:'✅', Tikrinama:'🔍', Grąžinta:'↩️' };
+  const emptyTexts = { Priskirta:'Nėra aktyvių darbų', Atlikta:'Nėra atliktų darbų', Tikrinama:'Nėra tikrinamų darbų', Grąžinta:'Nėra grąžintų darbų' };
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty"><div class="empty-icon">${currentMineFilter === 'Priskirta' ? '👷' : '✅'}</div><h3>${currentMineFilter === 'Priskirta' ? 'Nėra aktyvių darbų' : 'Nėra atliktų darbų'}</h3></div>`;
+    list.innerHTML = `<div class="empty"><div class="empty-icon">${emptyIcons[currentMineFilter]||'📋'}</div><h3>${emptyTexts[currentMineFilter]||'Nėra darbų'}</h3></div>`;
     return;
   }
   list.innerHTML = filtered.map(job => `
-    <div class="job-card" id="mcard-${job.id}">
+    <div class="job-card${job.status==='Grąžinta'?' style="border-left:3px solid #e05252"':''}" id="mcard-${job.id}">
       <div class="job-top" onclick="toggleExpandMine('${job.id}')">
         <div class="job-order">${job.orderNo}<br><span style="font-size:10px;color:var(--muted);font-weight:400">${job.shopNo}</span></div>
-        <div><div class="job-object">${job.object}</div><div class="job-customer">${job.customer} · ${job.objectPlace}</div></div>
+        <div>
+          <div class="job-object">${job.object}</div>
+          <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
+          ${job.status==='Grąžinta' && job.reviewComment ? `<div style="font-size:11px;color:#e05252;margin-top:3px;font-weight:600">↩ ${job.reviewComment}</div>` : ''}
+        </div>
         <div class="job-methods">${job.methods.map(m=>`<span class="method-tag">${m}</span>`).join('')}</div>
         <div class="job-date">${job.assignedDate}<br><span style="font-size:10px">Priskirta</span></div>
         <div class="job-actions">
           <span class="status ${job.status}">${statusLabel(job.status)}</span>
-          ${job.status === 'Priskirta' ? `<button class="btn btn-success" onclick="event.stopPropagation();confirmMarkDone('${job.id}')">✓ Atlikta</button>` : ''}
+          ${job.status === 'Priskirta' || job.status === 'Grąžinta' ? `<button class="btn btn-success" onclick="event.stopPropagation();confirmMarkDone('${job.id}')">✓ Atlikta</button>` : ''}
           <button class="btn-expand" onclick="event.stopPropagation();toggleExpandMine('${job.id}')">▾</button>
         </div>
       </div>
@@ -715,6 +724,7 @@ function renderMine() {
           <div><div class="detail-label">Atsakingas</div><div class="detail-value">${job.responsible}</div></div>
           <div><div class="detail-label">Priskirta</div><div class="detail-value">${job.assignedDate}</div></div>
           <div><div class="detail-label">Pastabos</div><div class="detail-value">${job.notes || '—'}</div></div>
+          ${job.status==='Grąžinta' && job.reviewComment ? `<div style="grid-column:1/-1"><div class="detail-label" style="color:#e05252">Grąžinimo priežastis</div><div class="detail-value" style="color:#e05252;font-weight:600">${job.reviewComment}</div></div>` : ''}
         </div>
       </div>
     </div>`).join('');
@@ -925,7 +935,8 @@ function updateStats() {
   document.getElementById('statDone').textContent = allJobs.filter(j=>j.status==='Atlikta').length;
   document.getElementById('badge-approvals').textContent = awaitApproval;
   document.getElementById('badge-assignment').textContent = allJobs.filter(j=>j.status==='Patvirtinta').length;
-  document.getElementById('badge-mine').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===currentUser?.username?.toLowerCase() && j.status==='Priskirta').length;
+  const myEmail2 = currentUser?.username?.toLowerCase();
+  document.getElementById('badge-mine').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail2 && (j.status==='Priskirta'||j.status==='Grąžinta')).length;
 }
 
 function updateFilterCounts() {
@@ -935,6 +946,8 @@ function updateFilterCounts() {
   document.getElementById('fc-Priskirta').textContent = allJobs.filter(j=>j.status==='Priskirta').length;
   document.getElementById('fc-Atlikta').textContent = allJobs.filter(j=>j.status==='Atlikta').length;
   document.getElementById('fc-mine').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && j.status==='Priskirta').length;
+  document.getElementById('fc-mine_tikrinama').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && j.status==='Tikrinama').length;
+  document.getElementById('fc-mine_grazinta').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && j.status==='Grąžinta').length;
   document.getElementById('fc-mine_done').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && j.status==='Atlikta').length;
 }
 

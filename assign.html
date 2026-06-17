@@ -1071,12 +1071,34 @@ function confirmOk() {
     return r && r.trim() && r.trim() !== '-' ? n.trim() + ' · ' + r.trim() : n.trim();
   })];
   const capturedFiles       = [...droppedFiles];
-  // Validate: at least one defektas required when neatitinka > 0
-  if (capturedNeatitinka > 0 && !capturedDefektas) {
-    const box = document.getElementById('defektas_checkboxes');
-    if (box) { box.style.border = '2px solid #e05252'; box.scrollIntoView({block:'nearest'}); }
-    return;
+
+  // Only run completion-dialog validation if these fields actually exist (i.e. this is the Atlikta dialog)
+  const isCompletionDialog = document.getElementById('complete_atitinka') !== null;
+  if (isCompletionDialog) {
+    // Validate: at least one of Atitinka/Neatitinka/Remontuotos must be > 0
+    if (capturedAtitinka === 0 && capturedNeatitinka === 0 && capturedRemontuotos === 0) {
+      ['complete_atitinka','complete_neatitinka','complete_remontuotos'].forEach(elId => {
+        const el = document.getElementById(elId);
+        if (el) el.style.border = '2px solid #e05252';
+      });
+      showToast('Įveskite bent vieną reikšmę: Atitinka, Neatitinka arba Remontuotos', 'error');
+      return;
+    }
+    // Validate: Darbo valandos must be > 0
+    if (capturedValandos === 0) {
+      const el = document.getElementById('complete_valandos');
+      if (el) { el.style.border = '2px solid #e05252'; el.focus(); }
+      showToast('Įveskite darbo valandas', 'error');
+      return;
+    }
+    // Validate: at least one defektas required when neatitinka > 0
+    if (capturedNeatitinka > 0 && !capturedDefektas) {
+      const box = document.getElementById('defektas_checkboxes');
+      if (box) { box.style.border = '2px solid #e05252'; box.scrollIntoView({block:'nearest'}); }
+      return;
+    }
   }
+
   closeConfirm(); // wipes DOM + resets droppedFiles
   if (action) action(capturedAtitinka, capturedNeatitinka, capturedDefektas, capturedValandos, capturedRemontuotos, capturedAtlikejai, capturedKomentarai, capturedFiles);
 }
@@ -1147,19 +1169,19 @@ function confirmMarkDone(id) {
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;text-align:left">
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Atitinka ✓</div>
-        <input type="number" id="complete_atitinka" min="0" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
+        <input type="number" id="complete_atitinka" min="0" value="0" oninput="this.style.border='1px solid var(--border)'" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
       </div>
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Neatitinka ✗</div>
-        <input type="number" id="complete_neatitinka" min="0" value="0" oninput="toggleDefektas(this.value)" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
+        <input type="number" id="complete_neatitinka" min="0" value="0" oninput="toggleDefektas(this.value);this.style.border='1px solid var(--border)'" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
       </div>
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Remontuotos</div>
-        <input type="number" id="complete_remontuotos" min="0" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
+        <input type="number" id="complete_remontuotos" min="0" value="0" oninput="this.style.border='1px solid var(--border)'" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
       </div>
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Darbo val.</div>
-        <input type="number" id="complete_valandos" min="0" step="0.5" value="0" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
+        <input type="number" id="complete_valandos" min="0" step="0.5" value="0" oninput="this.style.border='1px solid var(--border)'" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
       </div>
     </div>
 

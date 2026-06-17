@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NDT Job Assignment – MBL</title>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.10.0/lib/msal-browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root {
   --blue:#1a3a5c;--blue-mid:#2d5f8a;--blue-light:#e8f0f7;--blue-accent:#3d7ab5;
@@ -448,9 +450,12 @@ async function loadData() {
       id: String(i.Id),
       orderNo:         i.field_1 || '',
       shopNo:          i.field_2 || '',
+      applicationNo:   i.field_3 || '',
       customer:        i.field_4 || '',
+      customerRepresentative: i.field_5 || '',
       object:          i.field_8 || '',
       objectPlace:     i.field_6 || '',
+      objectRepresentative: i.field_7 || '',
       methods:         [i.field_9, i.field_11, i.field_15, i.field_17, i.field_20, i.field_23, i.field_31, i.field_34]
                          .map((v,idx) => v === 'Taip' ? ['VT','PT','MT','RT','UT','UTth','HT','PMI'][idx] : null)
                          .filter(Boolean).slice(0,5),
@@ -571,9 +576,63 @@ function openAssign(id) {
   panel.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
+async function ensureSpFolder(token, folderRelPath) {
+  try {
+    const folderCheck = await fetch(`${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelPath}')`, {
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/json;odata=verbose' }
+    });
+    if (folderCheck.status === 404) {
+      const createResp = await fetch(`${SP_SITE_URL}/_api/web/folders`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          Accept: 'application/json;odata=verbose',
+          'Content-Type': 'application/json;odata=verbose'
+        },
+        body: JSON.stringify({ '__metadata': { 'type': 'SP.Folder' }, 'ServerRelativeUrl': folderRelPath })
+      });
+      if (!createResp.ok) {
+        const ct = await createResp.text();
+        console.error('Folder create failed:', createResp.status, ct);
+        showToast('⚠ Nepavyko sukurti aplanko SharePoint', 'error');
+        return false;
+      }
+      console.log('Folder created:', folderRelPath);
+    }
+    return true;
+  } catch(fe) { console.warn('Folder check error:', fe); return false; }
+}
+
+async function uploadFileToSp(token, folderRelPath, filename, arrayBuffer) {
+  try {
+    const uploadUrl = `${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelPath}')/Files/add(url='${filename}',overwrite=true)`;
+    const uploadResp = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Accept': 'application/json;odata=verbose',
+        'Content-Type': 'application/octet-stream'
+      },
+      body: arrayBuffer
+    });
+    if (!uploadResp.ok) {
+      const errText = await uploadResp.text();
+      console.error('File upload failed:', filename, uploadResp.status, errText);
+      let spErr = uploadResp.status;
+      try { spErr = JSON.parse(errText)?.error?.message?.value || uploadResp.status; } catch{}
+      showToast(`⚠ Klaida (${filename}): ${spErr}`, 'error');
+      return false;
+    }
+    return true;
+  } catch(fe) {
+    console.error('File upload error:', filename, fe);
+    return false;
+  }
+}
+
 async function markDone(id, atitinka=0, neatitinka=0, defektas='', valandos=0, remontuotos=0, atlikejai=[], komentarai='', files=[], lines=[]) {
   const job = allJobs.find(j=>j.id===id);
-  console.log('Protocol lines captured:', lines); // TEMP — for verifying before PDF step
+  const completedDate = new Date().toISOString().split('T')[0];
 
   showToast('Siunčiama...','info');
   try {
@@ -586,7 +645,7 @@ async function markDone(id, atitinka=0, neatitinka=0, defektas='', valandos=0, r
         assignedTo: job?.assignedTo || '',
         assignedToEmail: job?.assignedToEmail || '',
         completedBy: currentUser.username,
-        completedDate: new Date().toISOString().split('T')[0],
+        completedDate: completedDate,
         orderNo: job?.orderNo || '',
         objectIdentification: job?.object || '',
         customer: job?.customer || '',
@@ -602,75 +661,45 @@ async function markDone(id, atitinka=0, neatitinka=0, defektas='', valandos=0, r
     });
     if (!resp.ok) throw new Error('Worker error: ' + resp.status);
 
-    // Upload files to SharePoint
+    const token = await getSpToken();
+    const folderRelPath = `/sites/MBL/Bendrai naudojami dokumentai/Formos/${job.orderNo}`;
+    await ensureSpFolder(token, folderRelPath);
+
+    // Upload attached files
+    let uploadErrors = 0;
     if (files.length > 0) {
       showToast('Įkeliami failai...','info');
-      const token = await getSpToken();
-      const folderRelPath = `/sites/MBL/Bendrai naudojami dokumentai/Formos/${job.orderNo}`;
-
-      // Ensure folder exists — create it if Power Automate hasn't made it yet
-      try {
-        const folderCheck = await fetch(`${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelPath}')`, {
-          headers: { Authorization: 'Bearer ' + token, Accept: 'application/json;odata=verbose' }
-        });
-        if (folderCheck.status === 404) {
-          // Folder missing — create it
-          const createResp = await fetch(`${SP_SITE_URL}/_api/web/folders`, {
-            method: 'POST',
-            headers: {
-              Authorization: 'Bearer ' + token,
-              Accept: 'application/json;odata=verbose',
-              'Content-Type': 'application/json;odata=verbose'
-            },
-            body: JSON.stringify({ '__metadata': { 'type': 'SP.Folder' }, 'ServerRelativeUrl': folderRelPath })
-          });
-          if (!createResp.ok) {
-            const ct = await createResp.text();
-            console.error('Folder create failed:', createResp.status, ct);
-            showToast('⚠ Nepavyko sukurti aplanko SharePoint', 'error');
-          } else {
-            console.log('Folder created:', folderRelPath);
-          }
-        }
-      } catch(fe) { console.warn('Folder check error:', fe); }
-
-      let uploadErrors = 0;
       for (const file of files) {
-        try {
-          const arrayBuffer = await file.arrayBuffer();
-          const uploadUrl = `${SP_SITE_URL}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelPath}')/Files/add(url='${file.name}',overwrite=true)`;
-          const uploadResp = await fetch(uploadUrl, {
-            method: 'POST',
-            headers: {
-              Authorization: 'Bearer ' + token,
-              'Accept': 'application/json;odata=verbose',
-              'Content-Type': 'application/octet-stream'
-            },
-            body: arrayBuffer
-          });
-          if (!uploadResp.ok) {
-            const errText = await uploadResp.text();
-            console.error('File upload failed:', file.name, uploadResp.status, errText);
-            let spErr = uploadResp.status;
-            try { spErr = JSON.parse(errText)?.error?.message?.value || uploadResp.status; } catch{}
-            showToast(`⚠ Klaida (${file.name}): ${spErr}`, 'error');
-            uploadErrors++;
-          }
-        } catch(fe) {
-          console.error('File upload error:', file.name, fe);
-          uploadErrors++;
-        }
+        const arrayBuffer = await file.arrayBuffer();
+        const ok = await uploadFileToSp(token, folderRelPath, file.name, arrayBuffer);
+        if (!ok) uploadErrors++;
       }
       if (uploadErrors > 0) showToast(`⚠ ${uploadErrors} failai neįkelti`, 'error');
     }
 
+    // Generate and upload the protocol PDF
+    let pdfOk = false;
+    try {
+      showToast('Generuojamas protokolas...', 'info');
+      const pdfDoc = await generateProtocolPDF(job, {
+        completedDate, atitinka, neatitinka, defektas, valandos, remontuotos, atlikejai, komentarai, lines
+      });
+      const pdfBlob = pdfDoc.output('arraybuffer');
+      const pdfName = `${job.orderNo}_protokolas.pdf`;
+      pdfOk = await uploadFileToSp(token, folderRelPath, pdfName, pdfBlob);
+      if (!pdfOk) showToast('⚠ Protokolas nesugeneruotas', 'error');
+    } catch(pe) {
+      console.error('PDF generation error:', pe);
+      showToast('⚠ Protokolo generavimo klaida', 'error');
+    }
+
     // Update local state immediately
-    if (job) job.status = 'Atlikta';
+    if (job) job.status = 'Tikrinama';
     updateStats();
     updateFilterCounts();
     renderJobs();
     renderMine();
-    showToast(`✓ Užbaigta${files.length > 0 ? ` · ${files.length} failai įkelti` : ''}`, 'success');
+    showToast(`✓ Užbaigta${files.length > 0 ? ` · ${files.length} failai įkelti` : ''}${pdfOk ? ' · protokolas sukurtas' : ''}`, 'success');
     resetFileUpload();
     setTimeout(() => loadData(), 4000);
   } catch(e) { showToast('Klaida: '+e.message,'error'); }
@@ -1091,6 +1120,119 @@ function collectProtocolLines() {
   });
   return lines;
 }
+
+// ── PDF Protocol Generation ──────────────────────────────────
+let _pdfFontCache = null;
+async function loadPdfFont() {
+  if (_pdfFontCache) return _pdfFontCache;
+  // Noto Sans regular+bold TTF — supports Lithuanian diacritics (ą č ę ė į š ų ū ž)
+  const regUrl = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosans/NotoSans-Regular.ttf';
+  const boldUrl = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosans/NotoSans-Bold.ttf';
+  const [regBuf, boldBuf] = await Promise.all([
+    fetch(regUrl).then(r => r.arrayBuffer()),
+    fetch(boldUrl).then(r => r.arrayBuffer())
+  ]);
+  const toBase64 = (buf) => {
+    let binary = '';
+    const bytes = new Uint8Array(buf);
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  };
+  _pdfFontCache = { regular: toBase64(regBuf), bold: toBase64(boldBuf) };
+  return _pdfFontCache;
+}
+
+async function generateProtocolPDF(job, data) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  // Embed Lithuanian-compatible font
+  const font = await loadPdfFont();
+  doc.addFileToVFS('NotoSans-Regular.ttf', font.regular);
+  doc.addFileToVFS('NotoSans-Bold.ttf', font.bold);
+  doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'normal');
+  doc.addFont('NotoSans-Bold.ttf', 'NotoSans', 'bold');
+  doc.setFont('NotoSans', 'normal');
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 10;
+
+  // ── Title ──
+  doc.setFont('NotoSans', 'bold');
+  doc.setFontSize(14);
+  doc.text('NDT DARBŲ ATLIKIMO PROTOKOLAS', pageWidth / 2, 14, { align: 'center' });
+  doc.setFontSize(9);
+  doc.setFont('NotoSans', 'normal');
+  doc.text('UAB Iremas · Metalų bandymų laboratorija', pageWidth / 2, 19, { align: 'center' });
+
+  // ── Header info block (merged at top) ──
+  const headerRows = [
+    ['Paraiškos Nr.', job.applicationNo || job.orderNo || '—', 'Registracijos data', job.submitted || '—'],
+    ['Užsakovas', job.customer || '—', 'Užsakovo atstovas', job.customerRepresentative || '—'],
+    ['Objekto vieta', job.objectPlace || '—', 'Objekto atstovas', job.objectRepresentative || '—'],
+    ['Iremo Užs. Nr.', job.orderNo || '—', 'Padalinio Užs. Nr.', job.shopNo || '—'],
+    ['Atlikimo data', data.completedDate || '—', 'Atlikėjai', data.atlikejai.join(', ') || '—'],
+    ['Darbo valandos', String(data.valandos), 'Atitinka / Neatitinka / Remontuotos', `${data.atitinka} / ${data.neatitinka} / ${data.remontuotos}`],
+  ];
+  if (data.defektas) headerRows.push(['Defekto tipas', data.defektas, '', '']);
+  if (data.komentarai) headerRows.push(['Komentarai', data.komentarai, '', '']);
+
+  doc.autoTable({
+    startY: 24,
+    body: headerRows,
+    theme: 'plain',
+    styles: { font: 'NotoSans', fontSize: 8.5, cellPadding: 1.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 38 },
+      1: { cellWidth: 90 },
+      2: { fontStyle: 'bold', cellWidth: 45 },
+      3: { cellWidth: 'auto' },
+    },
+    margin: { left: margin, right: margin },
+  });
+
+  // ── Protocol lines table ──
+  const tableStartY = doc.lastAutoTable.finalY + 6;
+  const head = [['Eil. Nr.', 'Metodas', 'Objektas, darbų aprašymas', 'Mato vnt.', 'Kiekis', 'Suvirintojo ID']];
+  const body = data.lines.map((l, idx) => [
+    String(idx + 1),
+    l.method || '—',
+    l.object || '—',
+    l.unit || '—',
+    l.qty || '—',
+    l.welder || '—',
+  ]);
+
+  doc.autoTable({
+    startY: tableStartY,
+    head: head,
+    body: body,
+    styles: { font: 'NotoSans', fontSize: 9, cellPadding: 2.5 },
+    headStyles: { font: 'NotoSans', fontStyle: 'bold', fillColor: [30, 58, 84], textColor: 255 },
+    columnStyles: {
+      0: { cellWidth: 16, halign: 'center' },
+      1: { cellWidth: 24, halign: 'center' },
+      2: { cellWidth: 'auto' },
+      3: { cellWidth: 24, halign: 'center' },
+      4: { cellWidth: 22, halign: 'center' },
+      5: { cellWidth: 32, halign: 'center' },
+    },
+    margin: { left: margin, right: margin },
+  });
+
+  // ── Footer ──
+  const footerY = doc.lastAutoTable.finalY + 10;
+  doc.setFontSize(8);
+  doc.setTextColor(120);
+  doc.text(`Protokolo sudarymo data: ${new Date().toISOString().split('T')[0]}`, margin, footerY);
+  doc.text(`MBL-F-27 · Rev. 06`, pageWidth - margin, footerY, { align: 'right' });
+
+  return doc;
+}
+// ──────────────────────────────────────────────────────────────
 
 function toggleDefektas(val) {
   const row = document.getElementById('defektas_row');

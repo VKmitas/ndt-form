@@ -571,8 +571,9 @@ function openAssign(id) {
   panel.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
-async function markDone(id, atitinka=0, neatitinka=0, defektas='', valandos=0, remontuotos=0, atlikejai=[], komentarai='', files=[]) {
+async function markDone(id, atitinka=0, neatitinka=0, defektas='', valandos=0, remontuotos=0, atlikejai=[], komentarai='', files=[], lines=[]) {
   const job = allJobs.find(j=>j.id===id);
+  console.log('Protocol lines captured:', lines); // TEMP — for verifying before PDF step
 
   showToast('Siunčiama...','info');
   try {
@@ -1034,6 +1035,63 @@ function fileIcon(name) {
   return '📎';
 }
 
+let protocolLineCount = 0;
+const PROTOCOL_METHODS = ['VT','PT','MT','RT','UT','UTth','HT','PMI','Tens','Charpy'];
+
+function addProtocolLine(prefill) {
+  protocolLineCount++;
+  const n = protocolLineCount;
+  const wrap = document.getElementById('protocol_lines');
+  if (!wrap) return;
+  const row = document.createElement('div');
+  row.className = 'protocol-line';
+  row.id = 'pline_' + n;
+  row.style = 'display:grid;grid-template-columns:90px 1fr 70px 70px 100px 28px;gap:6px;align-items:end;margin-bottom:6px;padding:6px;background:var(--blue-light);border-radius:6px;';
+  row.innerHTML = `
+    <div>
+      <select id="pl_method_${n}" style="width:100%;padding:5px 6px;border:1px solid var(--border);border-radius:5px;font-family:var(--font);font-size:12px;background:white;color:#1a2a3a">
+        <option value="">—</option>
+        ${PROTOCOL_METHODS.map(m=>`<option ${prefill&&prefill.method===m?'selected':''}>${m}</option>`).join('')}
+      </select>
+    </div>
+    <div>
+      <input type="text" id="pl_object_${n}" placeholder="Objektas, darbų aprašymas" value="${prefill?.object||''}" style="width:100%;padding:5px 6px;border:1px solid var(--border);border-radius:5px;font-family:var(--font);font-size:12px">
+    </div>
+    <div>
+      <input type="text" id="pl_unit_${n}" placeholder="vnt." value="${prefill?.unit||''}" style="width:100%;padding:5px 6px;border:1px solid var(--border);border-radius:5px;font-family:var(--font);font-size:12px">
+    </div>
+    <div>
+      <input type="text" id="pl_qty_${n}" placeholder="kiekis" value="${prefill?.qty||''}" style="width:100%;padding:5px 6px;border:1px solid var(--border);border-radius:5px;font-family:var(--font);font-size:12px">
+    </div>
+    <div>
+      <input type="text" id="pl_welder_${n}" placeholder="Suvirintojo ID" value="${prefill?.welder||''}" style="width:100%;padding:5px 6px;border:1px solid var(--border);border-radius:5px;font-family:var(--font);font-size:12px">
+    </div>
+    <button type="button" onclick="removeProtocolLine(${n})" style="background:none;border:none;color:#e05252;font-size:16px;cursor:pointer;padding:5px;line-height:1;">✕</button>
+  `;
+  wrap.appendChild(row);
+}
+
+function removeProtocolLine(n) {
+  const row = document.getElementById('pline_' + n);
+  if (row) row.remove();
+}
+
+function collectProtocolLines() {
+  const lines = [];
+  document.querySelectorAll('.protocol-line').forEach(row => {
+    const n = row.id.replace('pline_', '');
+    const method = document.getElementById('pl_method_'+n)?.value || '';
+    const object  = document.getElementById('pl_object_'+n)?.value || '';
+    const unit    = document.getElementById('pl_unit_'+n)?.value || '';
+    const qty     = document.getElementById('pl_qty_'+n)?.value || '';
+    const welder  = document.getElementById('pl_welder_'+n)?.value || '';
+    if (method || object || unit || qty || welder) {
+      lines.push({ method, object, unit, qty, welder });
+    }
+  });
+  return lines;
+}
+
 function toggleDefektas(val) {
   const row = document.getElementById('defektas_row');
   if (!row) return;
@@ -1071,6 +1129,7 @@ function confirmOk() {
     return r && r.trim() && r.trim() !== '-' ? n.trim() + ' · ' + r.trim() : n.trim();
   })];
   const capturedFiles       = [...droppedFiles];
+  const capturedLines       = collectProtocolLines();
 
   // Only run completion-dialog validation if these fields actually exist (i.e. this is the Atlikta dialog)
   const isCompletionDialog = document.getElementById('complete_atitinka') !== null;
@@ -1100,7 +1159,7 @@ function confirmOk() {
   }
 
   closeConfirm(); // wipes DOM + resets droppedFiles
-  if (action) action(capturedAtitinka, capturedNeatitinka, capturedDefektas, capturedValandos, capturedRemontuotos, capturedAtlikejai, capturedKomentarai, capturedFiles);
+  if (action) action(capturedAtitinka, capturedNeatitinka, capturedDefektas, capturedValandos, capturedRemontuotos, capturedAtlikejai, capturedKomentarai, capturedFiles, capturedLines);
 }
 
 // Updated action wrappers with confirmations
@@ -1148,6 +1207,7 @@ function confirmAssign(id) {
 
 function confirmMarkDone(id) {
   const job = allJobs.find(j=>j.id===id);
+  protocolLineCount = 0; // reset line counter for fresh dialog
   // Show completion mini form in confirm dialog
   document.getElementById('confirmIcon').textContent = '✅';
   document.getElementById('confirmTitle').textContent = 'Užbaigti darbą / Complete Job';
@@ -1183,6 +1243,22 @@ function confirmMarkDone(id) {
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Darbo val.</div>
         <input type="number" id="complete_valandos" min="0" step="0.5" value="0" oninput="this.style.border='1px solid var(--border)'" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:13px">
       </div>
+    </div>
+
+    <div style="margin-top:14px;text-align:left">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Protokolo eilutės</div>
+        <button type="button" onclick="addProtocolLine()" style="font-family:var(--font);font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--blue-accent);border-radius:6px;background:var(--white);color:var(--blue-accent);cursor:pointer;">+ Eilutė</button>
+      </div>
+      <div style="display:grid;grid-template-columns:90px 1fr 70px 70px 100px 28px;gap:6px;margin-bottom:4px;">
+        <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase">Metodas</div>
+        <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase">Objektas</div>
+        <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase">Mato vnt.</div>
+        <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase">Kiekis</div>
+        <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase">Suvirint. ID</div>
+        <div></div>
+      </div>
+      <div id="protocol_lines"></div>
     </div>
 
     <div id="defektas_row" style="display:none;margin-top:10px;text-align:left">
@@ -1239,8 +1315,9 @@ function confirmMarkDone(id) {
   const okBtn = document.getElementById('confirmOkBtn');
   okBtn.textContent = '✓ Užbaigti';
   okBtn.className = 'btn btn-success';
-  pendingAction = (atitinka, neatitinka, defektas, valandos, remontuotos, atlikejai, komentarai, files) => markDone(id, atitinka, neatitinka, defektas, valandos, remontuotos, atlikejai, komentarai, files);
+  pendingAction = (atitinka, neatitinka, defektas, valandos, remontuotos, atlikejai, komentarai, files, lines) => markDone(id, atitinka, neatitinka, defektas, valandos, remontuotos, atlikejai, komentarai, files, lines);
   document.getElementById('confirmOverlay').classList.add('show');
+  addProtocolLine(); // start with one empty row
 }
 
 async function confirmAssignExec(id) {

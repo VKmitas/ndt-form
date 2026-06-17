@@ -1133,7 +1133,7 @@ function loadPdfFont() {
 
 async function generateProtocolPDF(job, data) {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
   // Embed Lithuanian-compatible font
   const font = await loadPdfFont();
@@ -1144,45 +1144,118 @@ async function generateProtocolPDF(job, data) {
   doc.setFont('NotoSans', 'normal');
 
   const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 10;
+  const margin = 12;
+  const navy = [15, 31, 46];
+  const orange = [232, 100, 10];
 
-  // ── Title ──
+  // ── Top revision line ──
+  doc.setFontSize(7.5);
+  doc.setTextColor(90);
+  doc.text('MBL-F-27 | Revizija / Revision: 06 | Data / Date: 2025-12-08', pageWidth - margin, 8, { align: 'right' });
+
+  // ── Logo block + company info (left) and field-label table (right) ──
+  const logoTop = 11;
+  const logoW = 70;
+  doc.setDrawColor(200);
+  doc.setLineWidth(0.2);
+  doc.rect(margin, logoTop, logoW, 24);
+  doc.setFillColor(...orange);
+  doc.rect(margin + 2, logoTop + 2, 12, 12, 'F');
+  doc.setTextColor(255);
   doc.setFont('NotoSans', 'bold');
-  doc.setFontSize(14);
-  doc.text('NDT DARBŲ ATLIKIMO PROTOKOLAS', pageWidth / 2, 14, { align: 'center' });
-  doc.setFontSize(9);
+  doc.setFontSize(7);
+  doc.text('MBL', margin + 8, logoTop + 9, { align: 'center' });
+  doc.setTextColor(20);
+  doc.setFontSize(8);
+  doc.text('UAB "IREMAS" Metalų bandymų', margin + 16, logoTop + 6);
+  doc.text('laboratorija / Metal Testing Lab', margin + 16, logoTop + 9.5);
   doc.setFont('NotoSans', 'normal');
-  doc.text('UAB Iremas · Metalų bandymų laboratorija', pageWidth / 2, 19, { align: 'center' });
+  doc.setFontSize(6.5);
+  doc.setTextColor(80);
+  doc.text('Jonalaukio k., Jonavos sen., 55296 Jonavos r.', margin + 2, logoTop + 16);
+  doc.text('+370 349 56742, mbl@iremas.lt', margin + 2, logoTop + 19);
+  doc.text('linkedin.com/company/iremas', margin + 2, logoTop + 22);
 
-  // ── Header info block (merged at top) ──
-  const headerRows = [
-    ['Paraiškos Nr.', job.applicationNo || job.orderNo || '—', 'Registracijos data', job.submitted || '—'],
-    ['Užsakovas', job.customer || '—', 'Užsakovo atstovas', job.customerRepresentative || '—'],
-    ['Objekto vieta', job.objectPlace || '—', 'Objekto atstovas', job.objectRepresentative || '—'],
-    ['Iremo Užs. Nr.', job.orderNo || '—', 'Padalinio Užs. Nr.', job.shopNo || '—'],
-    ['Atlikimo data', data.completedDate || '—', 'Atlikėjai', data.atlikejai.join(', ') || '—'],
-    ['Darbo valandos', String(data.valandos), 'Atitinka / Neatitinka / Remontuotos', `${data.atitinka} / ${data.neatitinka} / ${data.remontuotos}`],
+  // Field-label table (right side) — mirrors original header table
+  const fieldTableX = margin + logoW + 4;
+  const fieldTableW = pageWidth - margin - fieldTableX;
+  const fieldRows = [
+    ['Iremo Užs. Nr. / Iremas Order No.*', job.orderNo || ''],
+    ['Padalinio Užs. Nr. / Shop Internal No. *', job.shopNo || ''],
+    ['Užsakovas / Customer*', job.customer || ''],
+    ['Užsakovo atstovas / Customer representative *', job.customerRepresentative || ''],
+    ['Objekto vieta / Object place*', job.objectPlace || ''],
+    ['Objekto atstovas / Object representative*', job.objectRepresentative || ''],
   ];
-  if (data.defektas) headerRows.push(['Defekto tipas', data.defektas, '', '']);
-  if (data.komentarai) headerRows.push(['Komentarai', data.komentarai, '', '']);
-
   doc.autoTable({
-    startY: 24,
-    body: headerRows,
-    theme: 'plain',
-    styles: { font: 'NotoSans', fontSize: 8.5, cellPadding: 1.5 },
-    columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 38 },
-      1: { cellWidth: 90 },
-      2: { fontStyle: 'bold', cellWidth: 45 },
-      3: { cellWidth: 'auto' },
-    },
-    margin: { left: margin, right: margin },
+    startY: logoTop,
+    margin: { left: fieldTableX, right: margin },
+    tableWidth: fieldTableW,
+    body: fieldRows,
+    theme: 'grid',
+    styles: { font: 'NotoSans', fontSize: 6.8, cellPadding: 1.1, lineColor: [180,180,180], lineWidth: 0.15, textColor: 20 },
+    columnStyles: { 0: { cellWidth: fieldTableW * 0.52, fontStyle: 'bold' }, 1: { cellWidth: fieldTableW * 0.48 } },
   });
 
-  // ── Protocol lines table ──
-  const tableStartY = doc.lastAutoTable.finalY + 6;
-  const head = [['Eil. Nr.', 'Metodas', 'Objektas, darbų aprašymas', 'Mato vnt.', 'Kiekis', 'Suvirintojo ID']];
+  let y = Math.max(logoTop + 26, doc.lastAutoTable.finalY + 3);
+
+  // ── Title banner: DARBŲ PARAIŠKA Nr. ──
+  doc.setDrawColor(...navy);
+  doc.setLineWidth(0.3);
+  doc.rect(margin, y, pageWidth - margin * 2, 9);
+  doc.setFont('NotoSans', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(20);
+  doc.text('DARBŲ ATLIKIMO PROTOKOLAS Nr. / COMPLETION PROTOCOL NO.', margin + 3, y + 6);
+  doc.setTextColor(...orange);
+  doc.text(String(job.applicationNo || job.orderNo || '—'), pageWidth - margin - 3, y + 6, { align: 'right' });
+  y += 13;
+
+  // ── Objekto Identifikavimas ──
+  doc.setFont('NotoSans', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(20);
+  doc.text('Objekto Identifikavimas / Object Identification *', margin, y);
+  y += 4;
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.15);
+  doc.rect(margin, y, pageWidth - margin * 2, 7);
+  doc.setFont('NotoSans', 'normal');
+  doc.setFontSize(8);
+  doc.text(job.object || '—', margin + 2, y + 4.7);
+  y += 11;
+
+  // ── Completion summary block ──
+  const summaryRows = [
+    ['Atlikimo data / Completion date', data.completedDate || '—', 'Darbo valandos / Hours', String(data.valandos)],
+    ['Atlikėjai / Performed by', data.atlikejai.join(', ') || '—', 'Remontuotos / Repaired', String(data.remontuotos)],
+    ['Atitinka / Pass', String(data.atitinka), 'Neatitinka / Fail', String(data.neatitinka)],
+  ];
+  if (data.defektas) summaryRows.push(['Defekto tipas / Defect type', data.defektas, '', '']);
+  if (data.komentarai) summaryRows.push(['Komentarai / Comments', data.komentarai, '', '']);
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: margin, right: margin },
+    body: summaryRows,
+    theme: 'grid',
+    styles: { font: 'NotoSans', fontSize: 7.5, cellPadding: 1.6, lineColor: [180,180,180], lineWidth: 0.15, textColor: 20 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 48, fillColor: [240,243,247] },
+      1: { cellWidth: 70 },
+      2: { fontStyle: 'bold', cellWidth: 48, fillColor: [240,243,247] },
+      3: { cellWidth: 'auto' },
+    },
+  });
+  y = doc.lastAutoTable.finalY + 5;
+
+  // ── Duomenys apie objektą / Object data table (mirrors original page 2 layout) ──
+  doc.setFont('NotoSans', 'bold');
+  doc.setFontSize(8.5);
+  doc.text('Duomenys apie objektą / Object Data', margin, y);
+  y += 3;
+
+  const head = [['Eil. Nr.', 'Bandymo metodas', 'Objektas, darbų aprašymas', 'Mato vnt.', 'Kiekis', 'Suvirintojo ID']];
   const body = data.lines.map((l, idx) => [
     String(idx + 1),
     l.method || '—',
@@ -1193,28 +1266,49 @@ async function generateProtocolPDF(job, data) {
   ]);
 
   doc.autoTable({
-    startY: tableStartY,
+    startY: y,
     head: head,
     body: body,
-    styles: { font: 'NotoSans', fontSize: 9, cellPadding: 2.5 },
-    headStyles: { font: 'NotoSans', fontStyle: 'bold', fillColor: [30, 58, 84], textColor: 255 },
-    columnStyles: {
-      0: { cellWidth: 16, halign: 'center' },
-      1: { cellWidth: 24, halign: 'center' },
-      2: { cellWidth: 'auto' },
-      3: { cellWidth: 24, halign: 'center' },
-      4: { cellWidth: 22, halign: 'center' },
-      5: { cellWidth: 32, halign: 'center' },
-    },
     margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { font: 'NotoSans', fontSize: 8, cellPadding: 2, lineColor: [180,180,180], lineWidth: 0.15, textColor: 20 },
+    headStyles: { font: 'NotoSans', fontStyle: 'bold', fillColor: navy, textColor: 255, halign: 'center' },
+    columnStyles: {
+      0: { cellWidth: 14, halign: 'center' },
+      1: { cellWidth: 26, halign: 'center' },
+      2: { cellWidth: 'auto' },
+      3: { cellWidth: 22, halign: 'center' },
+      4: { cellWidth: 20, halign: 'center' },
+      5: { cellWidth: 30, halign: 'center' },
+    },
   });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── Signature block (mirrors original bottom section) ──
+  const sigColW = (pageWidth - margin * 2) / 2;
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.15);
+  doc.rect(margin, y, sigColW, 22);
+  doc.rect(margin + sigColW, y, sigColW, 22);
+  doc.setFont('NotoSans', 'bold');
+  doc.setFontSize(7);
+  doc.text('Darbus atliko / Performed by:', margin + 2, y + 4);
+  doc.text('Protokolą patvirtino / Approved by:', margin + sigColW + 2, y + 4);
+  doc.setFont('NotoSans', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(data.atlikejai.join(', ') || '—', margin + 2, y + 11);
+  doc.text(String(currentUser?.name || ''), margin + sigColW + 2, y + 11);
+  doc.setFontSize(6.5);
+  doc.setTextColor(100);
+  doc.text(`Data / Date: ${data.completedDate || '—'}`, margin + 2, y + 18);
+  doc.text(`Data / Date: ${new Date().toISOString().split('T')[0]}`, margin + sigColW + 2, y + 18);
 
   // ── Footer ──
-  const footerY = doc.lastAutoTable.finalY + 10;
-  doc.setFontSize(8);
-  doc.setTextColor(120);
+  const footerY = doc.internal.pageSize.getHeight() - 8;
+  doc.setFontSize(7);
+  doc.setTextColor(130);
   doc.text(`Protokolo sudarymo data: ${new Date().toISOString().split('T')[0]}`, margin, footerY);
-  doc.text(`MBL-F-27 · Rev. 06`, pageWidth - margin, footerY, { align: 'right' });
+  doc.text('MBL-F-27 · Rev. 06', pageWidth - margin, footerY, { align: 'right' });
 
   return doc;
 }

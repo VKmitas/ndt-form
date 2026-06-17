@@ -783,6 +783,7 @@ function renderApprovals() {
           <div class="job-object">${job.object}</div>
           <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;">Pateikė: ${job.submittedBy} · ${job.submitted}</div>
+          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:var(--blue-light);border:1px solid var(--blue-accent);color:var(--blue-accent);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
         </div>
         <div class="approval-actions">
           ${canApprove ? `
@@ -825,7 +826,7 @@ function renderApprovals() {
           <div class="job-object">${job.object}</div>
           <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;">Atliko: ${job.atlikejai || job.assignedTo} · ${job.completedDate || '—'}</div>
-          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:var(--blue-accent);font-weight:600;text-decoration:none;">📁 Atidaryti aplanką</a>
+          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:var(--blue-light);border:1px solid var(--blue-accent);color:var(--blue-accent);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
         </div>
         <div class="approval-actions">
           ${canApprove ? `

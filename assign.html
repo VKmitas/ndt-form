@@ -443,7 +443,7 @@ async function loadData() {
     document.getElementById('noPermBanner').style.display = (canAssign || canApprove) ? 'none' : 'block';
 
     // Load NDT_Requests — select only needed columns
-    const jobItems = await spGetList('NDT_Requests', 'Id,field_1,field_2,field_4,field_6,field_8,field_9,field_11,field_15,field_17,field_20,field_23,field_31,field_34,field_112,field_113,field_114,field_115,Created,SubmittedByEmail,AssignedTo,AssignedToEmail,AssignedDate,Atitinka,Neatitinka,Defektas,Atlikejai,Komentarai_Atlikus,Komentarai_Grazinus,DarboValandos,Remontuotos,CompletedBy,CompletedDate', 500);
+    const jobItems = await spGetList('NDT_Requests', 'Id,field_1,field_2,field_4,field_6,field_8,field_9,field_11,field_15,field_17,field_20,field_23,field_31,field_34,field_112,field_113,field_114,field_115,Created,SubmittedByEmail,AssignedToEmail,AssignedDate,Atitinka,Neatitinka,Defektas,Atlikejai,Komentarai_Atlikus,Komentarai_Grazinus,DarboValandos,Remontuotos,CompletedBy,CompletedDate', 500);
     allJobs = jobItems.map(i => ({
       id: String(i.Id),
       orderNo:         i.field_1 || '',

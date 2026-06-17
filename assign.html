@@ -443,7 +443,7 @@ async function loadData() {
     document.getElementById('noPermBanner').style.display = (canAssign || canApprove) ? 'none' : 'block';
 
     // Load NDT_Requests — select only needed columns
-    const jobItems = await spGetList('NDT_Requests', '', 500);
+    const jobItems = await spGetList('NDT_Requests', 'Id,field_1,field_2,field_4,field_6,field_8,field_9,field_11,field_15,field_17,field_20,field_23,field_31,field_34,field_112,field_113,field_114,field_115,Created,SubmittedByEmail,AssignedTo,AssignedToEmail,AssignedDate,Atitinka,Neatitinka,Defektas,Atlikejai,Komentarai_Atlikus,Komentarai_Grazinus,DarboValandos,Remontuotos,CompletedBy,CompletedDate', 500);
     allJobs = jobItems.map(i => ({
       id: String(i.Id),
       orderNo:         i.field_1 || '',
@@ -508,7 +508,11 @@ function renderJobs() {
     <div class="job-card" id="card-${job.id}">
       <div class="job-top" onclick="toggleExpand('${job.id}')">
         <div class="job-order">${job.orderNo}<br><span style="font-size:10px;color:var(--muted);font-weight:400">${job.shopNo}</span></div>
-        <div><div class="job-object">${job.object}</div><div class="job-customer">${job.customer} · ${job.objectPlace}</div></div>
+        <div>
+          <div class="job-object">${job.object}</div>
+          <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
+          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:var(--blue-light);border:1px solid var(--blue-accent);color:var(--blue-accent);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
+        </div>
         <div class="job-methods">${job.methods.map(m=>`<span class="method-tag">${m}</span>`).join('') || '<span style="font-size:11px;color:var(--muted)">—</span>'}</div>
         <div class="job-date">${job.submitted}<br><span style="font-size:10px">${job.submittedBy}</span></div>
         <div class="job-actions">
@@ -708,6 +712,7 @@ function renderMine() {
           <div class="job-object">${job.object}</div>
           <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
           ${job.status==='Grąžinta' && job.reviewComment ? `<div style="font-size:11px;color:#e05252;margin-top:3px;font-weight:600">↩ ${job.reviewComment}</div>` : ''}
+          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:var(--blue-light);border:1px solid var(--blue-accent);color:var(--blue-accent);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
         </div>
         <div class="job-methods">${job.methods.map(m=>`<span class="method-tag">${m}</span>`).join('')}</div>
         <div class="job-date">${job.assignedDate}<br><span style="font-size:10px">Priskirta</span></div>

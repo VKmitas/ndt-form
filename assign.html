@@ -469,7 +469,7 @@ async function loadData() {
       defektas:        i.Defektas || '',
       atlikejai:       i.Atlikejai || '',
       komentarai:      i.Komentarai_Atlikus || '',
-      reviewComment:   i.ReviewComment || '',
+      reviewComment:   i.Komentarai_Grazinus || '',
       completedBy:     i.CompletedBy || '',
       completedDate:   i.CompletedDate ? i.CompletedDate.substring(0,10) : '',
     })).sort((a,b) => Number(b.id) - Number(a.id));

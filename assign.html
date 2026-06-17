@@ -310,7 +310,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   <div class="filters">
     <button class="filter-btn active" onclick="filterMine('Priskirta',this)">Aktyvūs <span class="filter-count" id="fc-mine">0</span></button>
     <button class="filter-btn" onclick="filterMine('Tikrinama',this)">Tikrinama <span class="filter-count" id="fc-mine_tikrinama">0</span></button>
-    <button class="filter-btn" onclick="filterMine('Grąžinta',this)">Grąžinta <span class="filter-count" id="fc-mine_grazinta">0</span></button>
     <button class="filter-btn" onclick="filterMine('Atlikta',this)">Atlikti <span class="filter-count" id="fc-mine_done">0</span></button>
     <div class="search-box">
       <span class="search-icon">🔍</span>
@@ -689,7 +688,8 @@ function renderMine() {
   const myEmail = currentUser?.username?.toLowerCase();
   let filtered = allJobs.filter(j => {
     const isMe = j.assignedToEmail?.toLowerCase() === myEmail;
-    const matchFilter = isMe && j.status === currentMineFilter;
+    const activeStatuses = currentMineFilter === 'Priskirta' ? ['Priskirta', 'Grąžinta'] : [currentMineFilter];
+    const matchFilter = isMe && activeStatuses.includes(j.status);
     const s = currentMineSearch.toLowerCase();
     const matchSearch = !s || j.orderNo.toLowerCase().includes(s) || j.customer.toLowerCase().includes(s) || j.object.toLowerCase().includes(s);
     return matchFilter && matchSearch;
@@ -825,6 +825,7 @@ function renderApprovals() {
           <div class="job-object">${job.object}</div>
           <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;">Atliko: ${job.atlikejai || job.assignedTo} · ${job.completedDate || '—'}</div>
+          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:var(--blue-accent);font-weight:600;text-decoration:none;">📁 Atidaryti aplanką</a>
         </div>
         <div class="approval-actions">
           ${canApprove ? `
@@ -945,9 +946,8 @@ function updateFilterCounts() {
   document.getElementById('fc-Patvirtinta').textContent = allJobs.filter(j=>j.status==='Patvirtinta').length;
   document.getElementById('fc-Priskirta').textContent = allJobs.filter(j=>j.status==='Priskirta').length;
   document.getElementById('fc-Atlikta').textContent = allJobs.filter(j=>j.status==='Atlikta').length;
-  document.getElementById('fc-mine').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && j.status==='Priskirta').length;
+  document.getElementById('fc-mine').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && (j.status==='Priskirta'||j.status==='Grąžinta')).length;
   document.getElementById('fc-mine_tikrinama').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && j.status==='Tikrinama').length;
-  document.getElementById('fc-mine_grazinta').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && j.status==='Grąžinta').length;
   document.getElementById('fc-mine_done').textContent = allJobs.filter(j=>j.assignedToEmail?.toLowerCase()===myEmail && j.status==='Atlikta').length;
 }
 

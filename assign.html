@@ -1125,13 +1125,35 @@ function collectProtocolLines() {
 let _pdfFontCache = null;
 async function loadPdfFont() {
   if (_pdfFontCache) return _pdfFontCache;
-  // Noto Sans regular+bold TTF — supports Lithuanian diacritics (ą č ę ė į š ų ū ž)
-  const regUrl = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosans/NotoSans-Regular.ttf';
-  const boldUrl = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosans/NotoSans-Bold.ttf';
-  const [regBuf, boldBuf] = await Promise.all([
-    fetch(regUrl).then(r => r.arrayBuffer()),
-    fetch(boldUrl).then(r => r.arrayBuffer())
-  ]);
+
+  // Multiple fallback sources — jsdelivr's gh/ proxy for huge repos can 403
+  const regularUrls = [
+    'https://cdn.jsdelivr.net/npm/typeface-noto-sans@1.1.13/files/noto-sans-latin-400.ttf',
+    'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Regular.ttf',
+    'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@4.5.0/files/noto-sans-latin-ext-400-normal.woff',
+  ];
+  const boldUrls = [
+    'https://cdn.jsdelivr.net/npm/typeface-noto-sans@1.1.13/files/noto-sans-latin-700.ttf',
+    'https://raw.githack.com/google/fonts/main/ofl/notosans/NotoSans-Bold.ttf',
+    'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans@4.5.0/files/noto-sans-latin-ext-700-normal.woff',
+  ];
+
+  const fetchFirst = async (urls) => {
+    for (const url of urls) {
+      try {
+        const r = await fetch(url);
+        if (r.ok) {
+          console.log('PDF font loaded from:', url);
+          return await r.arrayBuffer();
+        }
+        console.warn('Font fetch failed', r.status, url);
+      } catch(e) { console.warn('Font fetch error', url, e); }
+    }
+    throw new Error('Visi šriftų šaltiniai nepasiekiami');
+  };
+
+  const [regBuf, boldBuf] = await Promise.all([fetchFirst(regularUrls), fetchFirst(boldUrls)]);
+
   const toBase64 = (buf) => {
     let binary = '';
     const bytes = new Uint8Array(buf);

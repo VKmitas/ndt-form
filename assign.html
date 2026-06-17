@@ -1317,7 +1317,12 @@ function confirmMarkDone(id) {
   okBtn.className = 'btn btn-success';
   pendingAction = (atitinka, neatitinka, defektas, valandos, remontuotos, atlikejai, komentarai, files, lines) => markDone(id, atitinka, neatitinka, defektas, valandos, remontuotos, atlikejai, komentarai, files, lines);
   document.getElementById('confirmOverlay').classList.add('show');
-  addProtocolLine(); // start with one empty row
+  // Pre-fill one row per method selected in the original form, with Objektas from the request
+  if (job.methods && job.methods.length > 0) {
+    job.methods.forEach(m => addProtocolLine({ method: m, object: job.object || '' }));
+  } else {
+    addProtocolLine({ object: job.object || '' });
+  }
 }
 
 async function confirmAssignExec(id) {

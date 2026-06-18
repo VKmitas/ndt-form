@@ -7,130 +7,116 @@
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.10.0/lib/msal-browser.min.js"></script>
 <style>
 :root {
-  --navy:#0f1f2e;--navy2:#162840;--navy3:#1e3a54;
-  --orange:#e8640a;--orange2:#f07820;--orange-light:#fdebd8;
-  --white:#ffffff;--text:#e8eef4;--muted:#7a9ab8;--border:rgba(255,255,255,0.08);
+  --bg:#eef0f2;--surface:#ffffff;--ink:#1a1c1f;
+  --orange:#e8640a;--orange-dim:#c25509;
+  --muted:#6b7280;--border:#d8dce1;
+  --header-bg:#1a1c1f;--header-text:#ffffff;--header-muted:rgba(255,255,255,0.5);
   --font:'Segoe UI',system-ui,sans-serif;
+  --shadow:0 8px 24px rgba(0,0,0,0.06);
+}
+[data-theme="dark"] {
+  --bg:#15171a;--surface:#1e2125;--ink:#e4e6ea;
+  --orange:#e8640a;--orange-dim:#ff8a3d;
+  --muted:#8b919c;--border:#2d3138;
+  --header-bg:#0e0f11;--header-text:#ffffff;--header-muted:rgba(255,255,255,0.45);
+  --shadow:0 8px 24px rgba(0,0,0,0.4);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
-  font-family:var(--font);
-  background:var(--navy);
-  color:var(--text);
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  background-image:
-    radial-gradient(ellipse 70% 50% at 15% 50%, rgba(30,58,84,0.8) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 60% at 85% 20%, rgba(232,100,10,0.08) 0%, transparent 50%),
-    repeating-linear-gradient(-55deg, transparent, transparent 80px, rgba(255,255,255,0.008) 80px, rgba(255,255,255,0.008) 81px);
+  font-family:var(--font);background:var(--bg);color:var(--ink);
+  min-height:100vh;display:flex;flex-direction:column;
+  transition:background .2s,color .2s;
 }
 
 /* Header */
 .header{
+  background:var(--header-bg);
   display:flex;align-items:center;justify-content:space-between;
-  padding:20px 48px;
-  border-bottom:1px solid var(--border);
+  padding:18px 40px;
 }
-.logo{display:flex;align-items:center;gap:14px;}
+.logo{display:flex;align-items:center;gap:12px;}
 .logo-mark{
-  width:42px;height:42px;
-  background:linear-gradient(135deg,var(--orange),var(--orange2));
-  border-radius:6px;
+  width:36px;height:36px;background:var(--orange);border-radius:4px;
   display:flex;align-items:center;justify-content:center;
-  font-weight:800;font-size:13px;color:#fff;letter-spacing:.02em;
-  box-shadow:0 2px 12px rgba(232,100,10,0.4);
+  font-weight:800;font-size:12px;color:#fff;
 }
-.logo-name{font-size:15px;font-weight:600;color:var(--white);}
-.logo-sub{font-size:11px;color:var(--muted);margin-top:1px;}
-.header-meta{font-size:11px;color:var(--muted);text-align:right;line-height:1.8;}
+.logo-name{font-size:14px;font-weight:600;color:var(--header-text);}
+.logo-sub{font-size:11px;color:var(--header-muted);}
+.header-meta{font-size:11px;color:var(--header-muted);text-align:right;line-height:1.6;}
+.theme-toggle{
+  width:34px;height:34px;border-radius:4px;border:1px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.06);color:var(--header-text);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:15px;margin-left:16px;
+  transition:background .15s;
+}
+.theme-toggle:hover{background:rgba(255,255,255,0.12);}
 
 /* Main */
 .main{
   flex:1;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
-  padding:48px 24px 40px;
+  padding:56px 24px 48px;
 }
 
 /* Title block */
-.title-block{text-align:center;margin-bottom:48px;}
+.title-block{text-align:center;margin-bottom:44px;}
 .title-eyebrow{
   display:inline-block;
-  font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--orange2);margin-bottom:14px;
+  font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--orange-dim);margin-bottom:14px;
 }
 .title-main{
-  font-size:clamp(24px,3.5vw,38px);font-weight:300;
-  color:var(--white);letter-spacing:-.01em;line-height:1.15;
+  font-size:clamp(24px,3.5vw,34px);font-weight:600;
+  color:var(--ink);letter-spacing:-.01em;line-height:1.2;
   margin-bottom:6px;
 }
-.title-main strong{font-weight:700;}
-.title-sub{font-size:13px;color:var(--muted);letter-spacing:.04em;}
+.title-sub{font-size:13px;color:var(--muted);}
 
 /* Cards */
 .cards{
   display:grid;grid-template-columns:1fr 1fr;
   gap:16px;max-width:700px;width:100%;
 }
-
 .card{
-  background:var(--navy2);
+  background:var(--surface);
   border:1px solid var(--border);
-  border-radius:12px;
-  padding:32px 28px;
-  text-decoration:none;color:var(--text);
-  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+  border-left:3px solid var(--orange);
+  border-radius:3px;
+  padding:28px 26px;
+  text-decoration:none;color:var(--ink);
+  transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease;
   display:block;
-  position:relative;
-  overflow:hidden;
-}
-.card::after{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--orange),var(--orange2));
-  opacity:0;transition:opacity .2s ease;
 }
 .card:hover{
-  transform:translateY(-3px);
-  border-color:rgba(232,100,10,0.3);
-  box-shadow:0 8px 32px rgba(0,0,0,0.3);
+  box-shadow:var(--shadow);
+  transform:translateY(-2px);
 }
-.card:hover::after{opacity:1;}
-
 .card-icon{
-  width:48px;height:48px;
-  background:rgba(232,100,10,0.12);
-  border:1px solid rgba(232,100,10,0.2);
-  border-radius:10px;
+  width:42px;height:42px;
+  background:rgba(232,100,10,0.1);
+  border-radius:4px;
   display:flex;align-items:center;justify-content:center;
-  font-size:22px;margin-bottom:20px;
+  font-size:19px;margin-bottom:18px;
 }
-.card-title{font-size:19px;font-weight:700;color:var(--white);margin-bottom:3px;}
-.card-title-en{font-size:12px;color:var(--muted);font-style:italic;margin-bottom:14px;}
-.card-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:24px;}
+.card-title{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:3px;}
+.card-title-en{font-size:11.5px;color:var(--muted);margin-bottom:12px;}
+.card-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
 .card-link{
   display:inline-flex;align-items:center;gap:6px;
-  font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--orange2);transition:gap .15s ease;
+  font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--orange-dim);transition:gap .15s ease;
 }
 .card:hover .card-link{gap:10px;}
 .card-link::after{content:'→';}
 
-/* Divider */
-.divider{
-  display:flex;align-items:center;gap:16px;
-  max-width:700px;width:100%;margin-top:40px;
-}
-.divider-line{flex:1;height:1px;background:var(--border);}
-.divider-text{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;}
-
 /* Footer */
 .footer{
-  padding:16px 48px;
+  padding:16px 40px;
   border-top:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
   font-size:11px;color:var(--muted);
 }
-.footer-accent{color:var(--orange);font-weight:600;}
+.footer-accent{color:var(--orange-dim);font-weight:700;}
 
 @media(max-width:560px){
   .header{padding:16px 20px;}
@@ -138,23 +124,24 @@ body{
   .cards{grid-template-columns:1fr;}
   .footer{padding:14px 20px;flex-direction:column;gap:4px;text-align:center;}
 }
+
 /* Login overlay */
-.login-overlay{position:fixed;inset:0;background:var(--navy);z-index:200;display:flex;align-items:center;justify-content:center;}
+.login-overlay{position:fixed;inset:0;background:var(--header-bg);z-index:200;display:flex;align-items:center;justify-content:center;}
 .login-overlay.hidden{display:none;}
-.login-card{background:var(--navy2);border:1px solid var(--border);border-radius:12px;padding:40px 48px;text-align:center;max-width:380px;width:90%;}
-.login-logo{width:48px;height:48px;background:linear-gradient(135deg,var(--orange),var(--orange2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;margin:0 auto 16px;box-shadow:0 2px 12px rgba(232,100,10,0.4);}
-.login-card h2{font-size:18px;color:var(--white);margin-bottom:6px;font-weight:600;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:40px 48px;text-align:center;max-width:380px;width:90%;}
+.login-logo{width:46px;height:46px;background:var(--orange);border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;margin:0 auto 16px;}
+.login-card h2{font-size:18px;color:var(--ink);margin-bottom:6px;font-weight:700;}
 .login-card p{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
-.btn-ms{display:flex;align-items:center;gap:10px;background:#0078d4;color:#fff;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:500;cursor:pointer;width:100%;justify-content:center;font-family:var(--font);transition:background .15s;}
+.btn-ms{display:flex;align-items:center;gap:10px;background:#0078d4;color:#fff;border:none;border-radius:3px;padding:11px 20px;font-size:14px;font-weight:500;cursor:pointer;width:100%;justify-content:center;font-family:var(--font);transition:background .15s;}
 .btn-ms:hover{background:#006cbd;}
 .btn-ms svg{flex-shrink:0;}
 
 /* User pill in header */
-.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 4px;}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px 4px 4px;}
 .user-avatar{width:24px;height:24px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
-.user-name{font-size:12px;color:var(--text);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.btn-logout{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 4px;}
-.btn-logout:hover{color:var(--white);}
+.user-name{font-size:12px;color:var(--header-text);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.btn-logout{background:none;border:none;color:var(--header-muted);font-size:11px;cursor:pointer;padding:2px 4px;}
+.btn-logout:hover{color:var(--header-text);}
 </style>
 </head>
 <body>
@@ -179,7 +166,7 @@ body{
       <div class="logo-sub">Metalų bandymų laboratorija</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:16px;">
+  <div style="display:flex;align-items:center;">
     <div class="header-meta">
       MBL-F-27 · Rev. 06<br>
       Achemos Grupė
@@ -189,6 +176,7 @@ body{
       <span class="user-name" id="userName">...</span>
       <button class="btn-logout" onclick="signOut()" title="Atsijungti">✕</button>
     </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Tamsus / šviesus režimas">🌙</button>
   </div>
 </div>
 
@@ -196,7 +184,7 @@ body{
 
   <div class="title-block">
     <div class="title-eyebrow">Neardomieji bandymai · NDT</div>
-    <div class="title-main"><strong>Darbų valdymo</strong> sistema</div>
+    <div class="title-main">Darbų valdymo sistema</div>
     <div class="title-sub">Works Management System</div>
   </div>
 
@@ -220,8 +208,6 @@ body{
 
   </div>
 
-
-
 </div>
 
 <div class="footer">
@@ -232,8 +218,6 @@ body{
 <script>
 const CLIENT_ID = '18788fe0-90e8-4c79-8813-9f96ee80b6ab';
 const TENANT_ID = 'f300c84f-87f0-4d9e-8284-1e36dbe06fbe';
-// Broadest scope set — covers form.html (User.Read) and assign.html (SharePoint) needs.
-// Both pages can later acquireTokenSilent for whichever subset they need, no extra popup.
 const SCOPES = ['User.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Write'];
 
 const msalConfig = {
@@ -282,6 +266,18 @@ function signOut() {
   document.getElementById('userBadge').style.display = 'none';
   document.getElementById('loginOverlay').classList.remove('hidden');
 }
+
+// Theme — shared across all 3 pages via localStorage
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem('mbl-theme', theme);
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+applyTheme(localStorage.getItem('mbl-theme') || 'light');
 
 initAuth();
 </script>

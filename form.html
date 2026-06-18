@@ -859,6 +859,23 @@ function collectMethods(){
   return methods.join('; ');
 }
 
+// Collect selected method codes and their levels as two parallel comma-separated strings
+// e.g. Methods: "VT, PT"  MethodLevels: "B, "
+function collectMethodsAndLevels(){
+  const codes = [];
+  const levels = [];
+  document.querySelectorAll('.method-checkbox:checked').forEach(cb=>{
+    const code = cb.id.replace('cb_','');
+    const lvls = [];
+    document.querySelectorAll(`[name^="lvl_${code}"][type=radio]:checked,[name^="tech_${code}"][type=radio]:checked`).forEach(r=>lvls.push(r.value));
+    document.querySelectorAll(`[name^="lvl_${code}"][type=checkbox]:checked`).forEach(r=>lvls.push(r.value));
+    document.querySelectorAll(`[name^="lvl_${code}"]`).forEach(r=>{ if(r.type==='number'&&r.value) lvls.push(r.value+'°'); });
+    codes.push(code);
+    levels.push(lvls.join('/'));
+  });
+  return { methods: codes.join(', '), methodLevels: levels.join(', ') };
+}
+
 // Collect test lines
 function collectLines(){
   const lines = [];
@@ -900,21 +917,6 @@ async function submitForm(){
   });
   if(!valid){ document.querySelector('[required][style*="red"]')?.scrollIntoView({behavior:'smooth',block:'center'}); showToast('Užpildykite privalomus laukus','error'); return; }
 
-  // Validate: at least one method must be selected in section 2
-  const anyMethod = document.querySelectorAll('.method-checkbox:checked').length > 0;
-  if(!anyMethod){
-    const sec2 = document.querySelector('.sec-head .sec-title');
-    const sec2head = sec2?.closest('.sec-head');
-    if(sec2head){ sec2head.style.background='rgba(192,57,43,0.12)'; sec2head.style.borderBottom='1px solid rgba(192,57,43,0.4)'; }
-    document.querySelector('.methods-group')?.scrollIntoView({behavior:'smooth',block:'center'});
-    showToast('Pasirinkite bent vieną bandymo metodą','error');
-    // Reset highlight when any checkbox is ticked
-    document.querySelectorAll('.method-checkbox').forEach(cb=>{
-      cb.addEventListener('change', function(){ if(this.checked){ if(sec2head){sec2head.style.background='';sec2head.style.borderBottom='';} }}, {once:true});
-    });
-    return;
-  }
-
 
 
   const btn = document.getElementById('submitBtn');
@@ -932,35 +934,8 @@ async function submitForm(){
     ObjectPlace:            document.getElementById('f_objPlace').value,
     ObjectRepresentative:   document.getElementById('f_objRep').value,
     ObjectIdentification:   document.getElementById('f_objId').value,
-    // Methods (string summary + individual flags)
-    ExaminationMethods: collectMethods(),
-    VT_Selected:   document.getElementById('cb_VT')?.checked   ? 'Taip':'Ne',
-    VT_Level:      document.querySelector('[name=lvl_VT]:checked')?.value||'',
-    PT_Selected:   document.getElementById('cb_PT')?.checked   ? 'Taip':'Ne',
-    PT_Level:      document.querySelector('[name=lvl_PT]:checked')?.value||'',
-    MT_Selected:   document.getElementById('cb_MT')?.checked   ? 'Taip':'Ne',
-    MT_Level:      document.querySelector('[name=lvl_MT]:checked')?.value||'',
-    RT_Selected:   document.getElementById('cb_RT')?.checked   ? 'Taip':'Ne',
-    RT_TechniqueClass: document.querySelector('[name=tech_RT]:checked')?.value||'',
-    RT_Level:      document.querySelector('[name=lvl_RT]:checked')?.value||'',
-    UT_Selected:   document.getElementById('cb_UT')?.checked   ? 'Taip':'Ne',
-    UT_TechniqueClass: document.querySelector('[name=tech_UT]:checked')?.value||'',
-    UT_Level:      document.querySelector('[name=lvl_UT]:checked')?.value||'',
-    UTth_Selected: document.getElementById('cb_UTth')?.checked ? 'Taip':'Ne',
-    HT_Selected:   document.getElementById('cb_HT')?.checked   ? 'Taip':'Ne',
-    PMI_Selected:  document.getElementById('cb_PMI')?.checked  ? 'Taip':'Ne',
-    Tens_Selected:    document.getElementById('cb_Tens')?.checked    ? 'Taip':'Ne',
-    Charpy_Selected:  document.getElementById('cb_Charpy')?.checked  ? 'Taip':'Ne',
-    Mi_Selected:      document.getElementById('cb_Mi')?.checked      ? 'Taip':'Ne',
-    Ma_Selected:      document.getElementById('cb_Ma')?.checked      ? 'Taip':'Ne',
-    HTw_Selected:     document.getElementById('cb_HTw')?.checked     ? 'Taip':'Ne',
-    Tensw_Selected:   document.getElementById('cb_Tensw')?.checked   ? 'Taip':'Ne',
-    Charpyw_Selected: document.getElementById('cb_Charpyw')?.checked ? 'Taip':'Ne',
-    Bendw_Selected:   document.getElementById('cb_Bendw')?.checked   ? 'Taip':'Ne',
-    Fractw_Selected:  document.getElementById('cb_Fractw')?.checked  ? 'Taip':'Ne',
-    Maw_Selected:     document.getElementById('cb_Maw')?.checked     ? 'Taip':'Ne',
-    ASME_Selected:    document.getElementById('cb_ASME')?.checked    ? 'Taip':'Ne',
-    ASME_Category:    document.querySelector('[name=lvl_ASME]:checked')?.value||'',
+    // Methods (consolidated into two parallel comma-separated fields)
+    ...collectMethodsAndLevels(),
     // Agreements
     ReInspection:        document.querySelector('[name=reinspect]:checked')?.value||'',
     DecisionRule:        document.querySelector('[name=decisionRule]:checked')?.value||'',

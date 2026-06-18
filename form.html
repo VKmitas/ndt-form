@@ -162,19 +162,6 @@
 </head>
 <body>
 
-<!-- Login overlay -->
-<div class="login-overlay" id="loginOverlay">
-  <div class="login-card">
-    <div class="logo-mark" style="background:#1a3a5c;color:#fff;display:flex;align-items:center;justify-content:center;border-radius:8px;">MBL</div>
-    <h2>Darbų Paraiška</h2>
-    <p>Prisijunkite su savo Iremas Microsoft paskyra, kad galėtumėte pateikti NDT paraišką.</p>
-    <button class="btn-ms" onclick="signIn()">
-      <svg width="20" height="20" viewBox="0 0 21 21" fill="none"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-      Prisijungti su Microsoft
-    </button>
-  </div>
-</div>
-
 <div class="header">
   <div class="header-inner">
     <div class="logo">
@@ -1011,12 +998,14 @@ async function initAuth() {
   const accounts = msalInstance.getAllAccounts();
   if (accounts.length > 0) {
     setUser(accounts[0]);
+  } else {
+    // No session — must log in via index.html first
+    window.location.href = 'index.html';
   }
 }
 
 function setUser(account) {
   window.currentUser = { name: account.name, email: account.username };
-  document.getElementById('loginOverlay').classList.add('hidden');
   const initials = account.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
   document.getElementById('userAvatar').textContent = initials;
   document.getElementById('userName').textContent = account.name;
@@ -1025,17 +1014,10 @@ function setUser(account) {
   if (nameField) nameField.value = account.name;
 }
 
-async function signIn() {
-  try {
-    const resp = await msalInstance.loginPopup({ scopes: ['User.Read'] });
-    setUser(resp.account);
-  } catch(e) {
-    console.error(e);
-  }
-}
-
 function signOut() {
-  msalInstance.logoutPopup();
+  const account = msalInstance.getAllAccounts()[0];
+  if (account) msalInstance.logoutPopup({ account });
+  window.location.href = 'index.html';
 }
 
 // Init

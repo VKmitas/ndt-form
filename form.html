@@ -15,18 +15,25 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:60px;}
 
-  .page-header{background:var(--blue);color:#fff;}
-  .header-top{display:flex;align-items:center;justify-content:space-between;padding:14px 36px;border-bottom:1px solid rgba(255,255,255,0.12);}
-  .logo-wrap{display:flex;align-items:center;gap:12px;}
-  .logo-mark{width:36px;height:36px;background:var(--blue-accent);border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;}
-  .logo-name{font-size:15px;font-weight:600;}
-  .logo-sub{font-size:11px;opacity:.65;}
-  .header-meta{font-size:11px;opacity:.6;text-align:right;line-height:1.6;}
-  .header-title{padding:16px 36px 14px;display:flex;align-items:center;gap:14px;}
-  .header-title h1{font-size:20px;font-weight:600;}
-  .badge{font-size:11px;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:20px;}
-  .progress-bar{background:rgba(255,255,255,0.1);height:3px;}
-  .progress-fill{height:100%;background:#5aabff;width:0%;transition:width .4s;}
+  .header{background:var(--blue);color:#fff;}
+  .header-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid rgba(255,255,255,0.1);}
+  .logo{display:flex;align-items:center;gap:12px;}
+  .logo-mark{width:34px;height:34px;background:var(--blue-accent);border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+  .logo-name{font-size:14px;font-weight:600;}
+  .logo-sub{font-size:11px;opacity:.6;}
+  .header-nav{display:flex;align-items:center;gap:8px;}
+  .nav-link{font-size:12px;color:rgba(255,255,255,0.7);text-decoration:none;padding:6px 12px;border-radius:var(--radius);transition:background .15s;}
+  .nav-link:hover,.nav-link.active{background:rgba(255,255,255,0.15);color:#fff;}
+  .user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px 4px 4px;margin-left:8px;}
+  .user-avatar{width:24px;height:24px;background:var(--blue-accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;}
+  .user-name{font-size:12px;}
+  .btn-logout{background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:11px;margin-left:4px;}
+
+  .page-bar{background:var(--white);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;}
+  .page-title{font-size:17px;font-weight:600;color:var(--blue);}
+  .page-meta{font-size:11px;color:var(--muted);text-align:right;line-height:1.6;}
+  .progress-bar{background:var(--border);height:3px;}
+  .progress-fill{height:100%;background:var(--blue-accent);width:0%;transition:width .4s;}
 
   .form-body{max-width:900px;margin:28px auto 0;padding:0 20px;}
 
@@ -140,13 +147,9 @@
   .btn-ms{display:flex;align-items:center;gap:10px;background:#0078d4;color:#fff;border:none;border-radius:var(--radius);padding:11px 20px;font-size:14px;font-weight:500;cursor:pointer;width:100%;justify-content:center;font-family:var(--font);transition:background .15s;}
   .btn-ms:hover{background:#006cbd;}
   .btn-ms svg{flex-shrink:0;}
-  /* User badge in header */
-  .user-badge{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:20px;padding:5px 12px 5px 5px;}
-  .user-avatar{width:26px;height:26px;background:var(--blue-accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
-  .user-name{font-size:12px;color:rgba(255,255,255,0.9);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .btn-logout{background:none;border:none;color:rgba(255,255,255,0.6);font-size:11px;cursor:pointer;padding:2px 4px;margin-left:4px;}
-  .btn-logout:hover{color:#fff;}
-    .header-top,.header-title{padding:12px 16px;}
+
+  @media(max-width:700px){
+    .header-inner,.page-bar{padding:12px 16px;}
     .form-body{padding:0 12px;}
     .sec-body{padding:14px 14px;}
     .grid2,.grid3,.grid4{grid-template-columns:1fr;}
@@ -172,31 +175,31 @@
   </div>
 </div>
 
-<div class="page-header">
-  <div class="header-top">
-    <div class="logo-wrap">
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
       <div class="logo-mark">MBL</div>
       <div>
         <div class="logo-name">UAB Iremas</div>
         <div class="logo-sub">Metalų bandymų laboratorija</div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <a href="index.html" style="font-size:12px;color:rgba(255,255,255,0.7);text-decoration:none;padding:6px 12px;border-radius:4px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='none'">🏠 Pradžia</a>
-      <a href="assign.html" style="font-size:12px;color:rgba(255,255,255,0.7);text-decoration:none;padding:6px 12px;border-radius:4px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='none'">👷 Priskyrimas</a>
-      <div class="user-badge" id="userBadge" style="display:none;">
+    <div class="header-nav">
+      <a href="index.html" class="nav-link">🏠 Pradžia</a>
+      <a href="assign.html" class="nav-link">👷 Priskyrimas</a>
+      <div class="user-pill" id="userBadge" style="display:none;">
         <div class="user-avatar" id="userAvatar">?</div>
         <span class="user-name" id="userName">...</span>
         <button class="btn-logout" onclick="signOut()" title="Atsijungti">✕</button>
       </div>
-      <div class="header-meta">MBL-F-27 | Rev. 06<br>2025-12-08</div>
     </div>
   </div>
-  <div class="header-title">
-    <h1>Darbų Paraiška / Works Application</h1>
-    <span class="badge">NDT · DT · DTw</span>
-  </div>
   <div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+</div>
+
+<div class="page-bar">
+  <div class="page-title">Darbų Paraiška / Works Application</div>
+  <div class="page-meta">MBL-F-27 · Rev. 06<br>NDT · DT · DTw</div>
 </div>
 
 <div class="form-body">
@@ -733,7 +736,7 @@
       </div>
       <div class="field">
         <label>Pasirašymo data <span class="req">*</span><br><span class="lt">Date of Signature</span></label>
-        <input type="date" id="f_date" required>
+        <input type="date" id="f_date" readonly required style="background:var(--blue-light);color:var(--text);cursor:not-allowed;">
       </div>
       <div class="field span3">
         <label>Pastabos / kiti susitarimai<br><span class="lt">Notes / Other arrangements</span></label>
@@ -1038,6 +1041,7 @@ function signOut() {
 // Init
 initAuth();
 document.getElementById('f_date').value = new Date().toISOString().split('T')[0];
+document.getElementById('f_date').style.pointerEvents = 'none';
 addLine();
 updateProgress();
 </script>

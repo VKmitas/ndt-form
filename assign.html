@@ -218,19 +218,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 </head>
 <body>
 
-<!-- Login overlay -->
-<div class="login-overlay" id="loginOverlay">
-  <div class="login-card">
-    <div class="login-logo">MBL</div>
-    <h2>Darbų priskyrimas</h2>
-    <p>Prisijunkite su savo Iremas Microsoft paskyra.</p>
-    <button class="btn-ms" onclick="signIn()">
-      <svg width="20" height="20" viewBox="0 0 21 21" fill="none"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
-      Prisijungti su Microsoft
-    </button>
-  </div>
-</div>
-
 <div class="header">
   <div class="header-inner">
     <div class="logo">
@@ -354,7 +341,7 @@ let approvalSearch = '';
 
 // ── MSAL ────────────────────────────────────────────────
 const msalInstance = new msal.PublicClientApplication({
-  auth: { clientId: CLIENT_ID, authority: `https://login.microsoftonline.com/${TENANT_ID}`, redirectUri: 'https://vkmitas.github.io/ndt-form/assign.html' },
+  auth: { clientId: CLIENT_ID, authority: `https://login.microsoftonline.com/${TENANT_ID}`, redirectUri: 'https://vkmitas.github.io/ndt-form/' },
   cache: { cacheLocation: 'sessionStorage' }
 });
 
@@ -373,22 +360,19 @@ async function initAuth() {
     currentUser = accounts[0];
     setUserUI(currentUser);
     await loadData();
+  } else {
+    // No session — must log in via index.html first
+    window.location.href = 'index.html';
   }
 }
 
-async function signIn() {
-  try {
-    const resp = await msalInstance.loginPopup({ scopes: SCOPES });
-    currentUser = resp.account;
-    setUserUI(currentUser);
-    await loadData();
-  } catch(e) { console.error(e); }
+function signOut() {
+  const account = msalInstance.getAllAccounts()[0];
+  if (account) msalInstance.logoutPopup({ account });
+  window.location.href = 'index.html';
 }
 
-function signOut() { msalInstance.logoutPopup(); }
-
 function setUserUI(account) {
-  document.getElementById('loginOverlay').classList.add('hidden');
   const initials = account.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
   document.getElementById('userAvatar').textContent = initials;
   document.getElementById('userName').textContent = account.name;

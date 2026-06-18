@@ -9,114 +9,128 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root {
-  --blue:#1a3a5c;--blue-mid:#2d5f8a;--blue-light:#e8f0f7;--blue-accent:#3d7ab5;
-  --text:#1a1a1a;--muted:#5a6370;--border:#c8d4de;--bg:#f4f6f9;--white:#fff;
+  --bg:#eef0f2;--surface:#ffffff;--ink:#1a1c1f;
+  --orange:#e8640a;--orange-dim:#c25509;
+  --muted:#6b7280;--border:#d8dce1;
+  --header-bg:#1a1c1f;--header-text:#ffffff;--header-muted:rgba(255,255,255,0.5);
   --green:#1e7e4a;--green-light:#e6f4ec;--amber:#b07d1a;--amber-light:#fef9e7;
-  --red:#c0392b;--red-light:#fdf0f0;--radius:6px;--font:'Segoe UI',system-ui,sans-serif;
+  --red:#c0392b;--red-light:#fdf0f0;--radius:3px;--font:'Segoe UI',system-ui,sans-serif;
+  --purple:#6b21a8;--purple-light:#f3f0ff;--amber2:#92400e;--amber2-light:#fef3c7;--red2:#991b1b;--red2-light:#fee2e2;
+}
+[data-theme="dark"] {
+  --bg:#15171a;--surface:#1e2125;--ink:#e4e6ea;
+  --orange:#e8640a;--orange-dim:#ff8a3d;
+  --muted:#8b919c;--border:#2d3138;
+  --header-bg:#0e0f11;--header-text:#ffffff;--header-muted:rgba(255,255,255,0.45);
+  --green:#3fae72;--green-light:#16302280;--amber:#dba345;--amber-light:#3a2f1480;
+  --red:#e2716a;--red-light:#3a222080;
+  --purple:#b69cf0;--purple-light:#2a234780;--amber2:#e8b765;--amber2-light:#3a2f1480;--red2:#e8918f;--red2-light:#3a222080;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;transition:background .2s,color .2s;}
 
 /* Login overlay */
-.login-overlay{position:fixed;inset:0;background:var(--blue);z-index:200;display:flex;align-items:center;justify-content:center;}
+.login-overlay{position:fixed;inset:0;background:var(--header-bg);z-index:200;display:flex;align-items:center;justify-content:center;}
 .login-overlay.hidden{display:none;}
-.login-card{background:#fff;border-radius:12px;padding:40px 48px;text-align:center;max-width:380px;width:90%;}
-.login-logo{width:48px;height:48px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;margin:0 auto 16px;}
-.login-card h2{font-size:18px;color:var(--blue);margin-bottom:6px;}
+.login-card{background:var(--surface);border-radius:4px;padding:40px 48px;text-align:center;max-width:380px;width:90%;}
+.login-logo{width:48px;height:48px;background:var(--orange);border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;margin:0 auto 16px;}
+.login-card h2{font-size:18px;color:var(--ink);margin-bottom:6px;}
 .login-card p{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
 .btn-ms{display:flex;align-items:center;gap:10px;background:#0078d4;color:#fff;border:none;border-radius:var(--radius);padding:11px 20px;font-size:14px;font-weight:500;cursor:pointer;width:100%;justify-content:center;font-family:var(--font);}
 .btn-ms:hover{background:#006cbd;}
 
 /* Header */
-.header{background:var(--blue);color:#fff;}
-.header-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.header{background:var(--header-bg);color:var(--header-text);}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;}
 .logo{display:flex;align-items:center;gap:12px;}
-.logo-mark{width:34px;height:34px;background:var(--blue-accent);border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+.logo-mark{width:34px;height:34px;background:var(--orange);border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;}
 .logo-name{font-size:14px;font-weight:600;}
-.logo-sub{font-size:11px;opacity:.6;}
+.logo-sub{font-size:11px;color:var(--header-muted);}
 .header-nav{display:flex;align-items:center;gap:8px;}
-.nav-link{font-size:12px;color:rgba(255,255,255,0.7);text-decoration:none;padding:6px 12px;border-radius:var(--radius);transition:background .15s;}
-.nav-link:hover,.nav-link.active{background:rgba(255,255,255,0.15);color:#fff;}
-.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px 4px 4px;margin-left:8px;}
-.user-avatar{width:24px;height:24px;background:var(--blue-accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;}
+.nav-link{font-size:12px;color:var(--header-muted);text-decoration:none;padding:6px 12px;border-radius:var(--radius);transition:background .15s;}
+.nav-link:hover,.nav-link.active{background:rgba(255,255,255,0.12);color:var(--header-text);}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px 4px 4px;margin-left:8px;}
+.user-avatar{width:24px;height:24px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
 .user-name{font-size:12px;}
-.btn-logout{background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:11px;margin-left:4px;}
+.btn-logout{background:none;border:none;color:var(--header-muted);cursor:pointer;font-size:11px;margin-left:4px;}
+.theme-toggle{width:30px;height:30px;border-radius:4px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:var(--header-text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;margin-left:10px;transition:background .15s;}
+.theme-toggle:hover{background:rgba(255,255,255,0.12);}
 
 /* Page bar */
-.page-bar{background:var(--white);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;}
-.page-title{font-size:17px;font-weight:600;color:var(--blue);}
-.btn-refresh{font-family:var(--font);font-size:12px;padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--white);color:var(--muted);cursor:pointer;}
-.btn-refresh:hover{border-color:var(--blue-accent);color:var(--blue);}
+.page-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;}
+.page-title{font-size:16px;font-weight:600;color:var(--ink);}
+.btn-refresh{font-family:var(--font);font-size:12px;padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--muted);cursor:pointer;}
+.btn-refresh:hover{border-color:var(--orange-dim);color:var(--orange-dim);}
 
 /* Stats */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:20px 32px 0;}
-.stat{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:14px;}
-.stat-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:14px;}
+.stat-icon{width:38px;height:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .stat-icon.amber{background:var(--amber-light);}
-.stat-icon.blue{background:var(--blue-light);}
+.stat-icon.blue{background:rgba(232,100,10,0.1);}
 .stat-icon.green{background:var(--green-light);}
 .stat-icon.red{background:var(--red-light);}
-.stat-val{font-size:22px;font-weight:700;color:var(--blue);line-height:1;}
+.stat-val{font-size:22px;font-weight:700;color:var(--ink);line-height:1;}
 .stat-label{font-size:11px;color:var(--muted);margin-top:3px;}
 
 /* Filters */
 .filters{padding:16px 32px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.filter-btn{font-size:12px;font-weight:500;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--white);color:var(--muted);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;}
-.filter-btn:hover{border-color:var(--blue-accent);color:var(--blue);}
-.filter-btn.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.filter-btn{font-size:12px;font-weight:500;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.filter-btn:hover{border-color:var(--orange-dim);color:var(--orange-dim);}
+.filter-btn.active{background:var(--orange);color:#fff;border-color:var(--orange);}
 .filter-count{background:rgba(255,255,255,0.25);border-radius:10px;padding:1px 6px;font-size:10px;}
 .filter-btn:not(.active) .filter-count{background:var(--bg);color:var(--muted);}
 .search-box{margin-left:auto;position:relative;}
-.search-box input{font-family:var(--font);font-size:13px;padding:7px 12px 7px 32px;border:1px solid var(--border);border-radius:var(--radius);background:var(--white);width:220px;color:var(--text);}
-.search-box input:focus{outline:none;border-color:var(--blue-accent);}
+.search-box input{font-family:var(--font);font-size:13px;padding:7px 12px 7px 32px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);width:220px;color:var(--ink);}
+.search-box input:focus{outline:none;border-color:var(--orange-dim);}
 .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;}
 
 /* Jobs */
 .jobs{padding:0 32px 40px;display:flex;flex-direction:column;gap:10px;}
-.job-card{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:box-shadow .15s;}
-.job-card:hover{box-shadow:0 2px 12px rgba(26,58,92,0.08);}
+.job-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:box-shadow .15s;}
+.job-card:hover{box-shadow:0 2px 12px rgba(0,0,0,0.06);}
 .job-top{display:grid;grid-template-columns:100px 1fr 140px 100px auto;align-items:center;gap:16px;padding:14px 18px;cursor:pointer;}
-.job-order{font-size:13px;font-weight:700;color:var(--blue);}
-.job-object{font-size:13px;font-weight:600;}
+.job-order{font-size:13px;font-weight:700;color:var(--orange-dim);}
+.job-object{font-size:13px;font-weight:600;color:var(--ink);}
 .job-customer{font-size:11px;color:var(--muted);margin-top:2px;}
 .job-methods{display:flex;flex-wrap:wrap;gap:4px;}
-.method-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;background:var(--blue-light);color:var(--blue);}
+.method-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;background:rgba(232,100,10,0.1);color:var(--orange-dim);}
 .job-date{font-size:11px;color:var(--muted);text-align:center;}
 .job-actions{display:flex;align-items:center;gap:8px;}
 .status{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;}
 .status.Patvirtinta{background:var(--amber-light);color:var(--amber);}
-.status.Priskirta{background:var(--blue-light);color:var(--blue);}
+.status.Priskirta{background:rgba(232,100,10,0.1);color:var(--orange-dim);}
 .status.Atlikta{background:var(--green-light);color:var(--green);}
-.status.Pateikta{background:#f3f0ff;color:#6b21a8;}
-.status.Tikrinama{background:#fef3c7;color:#92400e;}
-.status.Grąžinta{background:#fee2e2;color:#991b1b;}
+.status.Pateikta{background:var(--purple-light);color:var(--purple);}
+.status.Tikrinama{background:var(--amber2-light);color:var(--amber2);}
+.status.Grąžinta{background:var(--red2-light);color:var(--red2);}
 .btn{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 14px;border-radius:var(--radius);border:none;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.btn-primary{background:var(--blue);color:#fff;}
-.btn-primary:hover{background:var(--blue-mid);}
+.btn-primary{background:var(--orange);color:#fff;}
+.btn-primary:hover{background:var(--orange-dim);}
 .btn-success{background:var(--green);color:#fff;}
-.btn-secondary{background:var(--white);border:1px solid var(--border);color:var(--muted);}
-.btn-secondary:hover{border-color:var(--blue-accent);color:var(--blue);}
+.btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--muted);}
+.btn-secondary:hover{border-color:var(--orange-dim);color:var(--orange-dim);}
 .btn-expand{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:4px;line-height:1;transition:transform .2s;}
 .job-card.expanded .btn-expand{transform:rotate(180deg);}
 
 /* Details */
-.job-details{display:none;border-top:1px solid var(--border);padding:16px 18px;background:#fafbfc;}
+.job-details{display:none;border-top:1px solid var(--border);padding:16px 18px;background:var(--bg);}
 .job-card.expanded .job-details{display:block;}
 .details-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
 .detail-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
-.detail-value{font-size:13px;color:var(--text);}
+.detail-value{font-size:13px;color:var(--ink);}
 
 /* Assign panel */
-.assign-panel{background:var(--white);border:1px solid var(--blue-accent);border-radius:var(--radius);padding:14px 16px;margin-top:12px;}
-.assign-panel-title{font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.assign-panel{background:var(--surface);border:1px solid var(--orange-dim);border-radius:var(--radius);padding:14px 16px;margin-top:12px;}
+.assign-panel-title{font-size:12px;font-weight:700;color:var(--orange-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
 .assign-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.engineer-select{font-family:var(--font);font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);flex:1;min-width:200px;color:var(--text);background:var(--white);}
-.engineer-select:focus{outline:none;border-color:var(--blue-accent);}
-.assign-note{font-family:var(--font);font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);flex:2;min-width:200px;color:var(--text);}
-.assign-note:focus{outline:none;border-color:var(--blue-accent);}
+.engineer-select{font-family:var(--font);font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);flex:1;min-width:200px;color:var(--ink);background:var(--surface);}
+.engineer-select:focus{outline:none;border-color:var(--orange-dim);}
+.assign-note{font-family:var(--font);font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);flex:2;min-width:200px;color:var(--ink);background:var(--surface);}
+.assign-note:focus{outline:none;border-color:var(--orange-dim);}
 
 /* Assigned display */
-.assigned-to{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--green-light);border-radius:var(--radius);border:1px solid #a7d7b8;margin-top:8px;}
+.assigned-to{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--green-light);border-radius:var(--radius);border:1px solid var(--green);margin-top:8px;}
 .assigned-avatar{width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
 .assigned-name{font-size:13px;font-weight:600;color:var(--green);}
 .assigned-email{font-size:11px;color:var(--muted);}
@@ -124,26 +138,26 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 
 /* Loading/Empty */
 .loading{text-align:center;padding:60px;color:var(--muted);}
-.spinner-lg{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--blue-accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px;}
+.spinner-lg{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--orange-dim);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .empty{text-align:center;padding:60px 20px;color:var(--muted);}
 .empty-icon{font-size:40px;margin-bottom:12px;}
 
 /* Toast */
-.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;z-index:500;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:var(--radius);font-size:14px;font-weight:500;color:#fff;z-index:500;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateY(0);}
 .toast.success{background:var(--green);}
 .toast.error{background:var(--red);}
-.toast.info{background:var(--blue);}
+.toast.info{background:var(--orange-dim);}
 
 /* No permission banner */
-.no-perm{background:var(--amber-light);border:1px solid var(--amber);border-radius:8px;padding:12px 18px;margin:16px 32px 0;font-size:13px;color:var(--amber);display:none;}
+.no-perm{background:var(--amber-light);border:1px solid var(--amber);border-radius:var(--radius);padding:12px 18px;margin:16px 32px 0;font-size:13px;color:var(--amber);display:none;}
 
 /* Tabs */
-.tabs{display:flex;gap:0;padding:0 32px;background:var(--white);border-bottom:1px solid var(--border);}
+.tabs{display:flex;gap:0;padding:0 32px;background:var(--surface);border-bottom:1px solid var(--border);}
 .tab{font-family:var(--font);font-size:13px;font-weight:500;padding:12px 20px;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;}
-.tab:hover{color:var(--blue);}
-.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600;}
+.tab:hover{color:var(--orange-dim);}
+.tab.active{color:var(--orange-dim);border-bottom-color:var(--orange);font-weight:600;}
 .tab-badge{background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:5px;}
 
 /* Tab panels */
@@ -151,27 +165,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .tab-panel.active{display:block;}
 
 /* Approval card */
-.approval-card{background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:box-shadow .15s;margin-bottom:10px;}
-.approval-card:hover{box-shadow:0 2px 12px rgba(26,58,92,0.08);}
+.approval-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:box-shadow .15s;margin-bottom:10px;}
+.approval-card:hover{box-shadow:0 2px 12px rgba(0,0,0,0.06);}
 .approval-top{display:grid;grid-template-columns:100px 1fr auto auto;align-items:center;gap:16px;padding:14px 18px;}
 .approval-actions{display:flex;gap:8px;align-items:center;}
 .btn-approve{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 16px;border-radius:var(--radius);border:none;cursor:pointer;background:var(--green);color:#fff;transition:all .15s;}
 .btn-approve:hover{background:#166038;}
-.btn-reject{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 16px;border-radius:var(--radius);border:1px solid var(--red);cursor:pointer;background:var(--white);color:var(--red);transition:all .15s;}
+.btn-reject{font-family:var(--font);font-size:12px;font-weight:600;padding:7px 16px;border-radius:var(--radius);border:1px solid var(--red);cursor:pointer;background:var(--surface);color:var(--red);transition:all .15s;}
 .btn-reject:hover{background:var(--red);color:#fff;}
-.approval-detail{border-top:1px solid var(--border);padding:14px 18px;background:#fafbfc;display:none;}
+.approval-detail{border-top:1px solid var(--border);padding:14px 18px;background:var(--bg);display:none;}
 .approval-card.expanded .approval-detail{display:block;}
 .approval-methods{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;}
 .comment-row{display:flex;gap:10px;margin-top:12px;}
-.comment-input{font-family:var(--font);font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);flex:1;color:var(--text);}
-.comment-input:focus{outline:none;border-color:var(--blue-accent);}
+.comment-input{font-family:var(--font);font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);flex:1;color:var(--ink);background:var(--surface);}
+.comment-input:focus{outline:none;border-color:var(--orange-dim);}
 .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;display:none;align-items:center;justify-content:center;padding:16px;}
 .confirm-overlay.show{display:flex;}
-.confirm-card{background:var(--white);border-radius:12px;padding:28px 32px;max-width:600px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.confirm-card{background:var(--surface);border-radius:4px;padding:28px 32px;max-width:600px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
 .confirm-icon{font-size:32px;margin-bottom:12px;text-align:center;}
-.confirm-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;text-align:center;}
+.confirm-title{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px;text-align:center;}
 .confirm-msg{font-size:13px;color:var(--muted);text-align:center;line-height:1.5;margin-bottom:20px;}
-.confirm-detail{font-size:12px;font-weight:600;color:var(--blue);background:var(--blue-light);padding:8px 12px;border-radius:var(--radius);text-align:center;margin-bottom:20px;}
+.confirm-detail{font-size:12px;font-weight:600;color:var(--orange-dim);background:rgba(232,100,10,0.1);padding:8px 12px;border-radius:var(--radius);text-align:center;margin-bottom:20px;}
 .confirm-btns{display:flex;gap:10px;}
 .confirm-btns .btn{flex:1;padding:10px;font-size:13px;text-align:center;}
 
@@ -236,6 +250,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <span class="user-name" id="userName">...</span>
         <button class="btn-logout" onclick="signOut()">✕</button>
       </div>
+      <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Tamsus / šviesus režimas">🌙</button>
     </div>
   </div>
 </div>
@@ -261,7 +276,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <div class="tabs">
   <button class="tab active" onclick="switchTab('approvals',this)">✅ Tvirtinimas <span class="tab-badge" id="badge-approvals">0</span></button>
   <button class="tab" onclick="switchTab('assignment',this)">👷 Priskyrimas <span class="tab-badge" style="background:var(--amber)" id="badge-assignment">0</span></button>
-  <button class="tab" onclick="switchTab('mine',this)">👤 Mano darbai <span class="tab-badge" style="background:var(--blue-accent)" id="badge-mine">0</span></button>
+  <button class="tab" onclick="switchTab('mine',this)">👤 Mano darbai <span class="tab-badge" style="background:var(--orange-dim)" id="badge-mine">0</span></button>
 </div>
 
 <!-- Approvals tab -->
@@ -500,7 +515,7 @@ function renderJobs() {
         <div>
           <div class="job-object">${job.object}</div>
           <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
-          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:var(--blue-light);border:1px solid var(--blue-accent);color:var(--blue-accent);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
+          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:rgba(232,100,10,0.1);border:1px solid var(--orange-dim);color:var(--orange-dim);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
         </div>
         <div class="job-methods">${job.methods.map(m=>`<span class="method-tag">${m}</span>`).join('') || '<span style="font-size:11px;color:var(--muted)">—</span>'}</div>
         <div class="job-date">${job.submitted}<br><span style="font-size:10px">${job.submittedBy}</span></div>
@@ -726,7 +741,7 @@ function renderMine() {
           <div class="job-object">${job.object}</div>
           <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
           ${job.status==='Grąžinta' && job.reviewComment ? `<div style="font-size:11px;color:#e05252;margin-top:3px;font-weight:600">↩ ${job.reviewComment}</div>` : ''}
-          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:var(--blue-light);border:1px solid var(--blue-accent);color:var(--blue-accent);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
+          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:rgba(232,100,10,0.1);border:1px solid var(--orange-dim);color:var(--orange-dim);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
         </div>
         <div class="job-methods">${job.methods.map(m=>`<span class="method-tag">${m}</span>`).join('')}</div>
         <div class="job-date">${job.assignedDate}<br><span style="font-size:10px">Priskirta</span></div>
@@ -802,7 +817,7 @@ function renderApprovals() {
           <div class="job-object">${job.object}</div>
           <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;">Pateikė: ${job.submittedBy} · ${job.submitted}</div>
-          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:var(--blue-light);border:1px solid var(--blue-accent);color:var(--blue-accent);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
+          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:rgba(232,100,10,0.1);border:1px solid var(--orange-dim);color:var(--orange-dim);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
         </div>
         <div class="approval-actions">
           ${canApprove ? `
@@ -845,7 +860,7 @@ function renderApprovals() {
           <div class="job-object">${job.object}</div>
           <div class="job-customer">${job.customer} · ${job.objectPlace}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;">Atliko: ${job.atlikejai || job.assignedTo} · ${job.completedDate || '—'}</div>
-          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:var(--blue-light);border:1px solid var(--blue-accent);color:var(--blue-accent);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
+          <a href="https://achemosgrupelt.sharepoint.com/sites/MBL/Bendrai%20naudojami%20dokumentai/Formos/${encodeURIComponent(job.orderNo)}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:4px;font-size:11px;font-weight:600;text-decoration:none;background:rgba(232,100,10,0.1);border:1px solid var(--orange-dim);color:var(--orange-dim);padding:3px 10px;border-radius:4px;">📁 Atidaryti aplanką</a>
         </div>
         <div class="approval-actions">
           ${canApprove ? `
@@ -1030,7 +1045,7 @@ function renderFileList() {
   const list = document.getElementById('file_list');
   if (!list) return;
   list.innerHTML = droppedFiles.map(f => `
-    <div style="display:flex;align-items:center;gap:6px;background:var(--blue-light);border:1px solid var(--border);border-radius:20px;padding:3px 10px 3px 8px;font-size:11px;color:var(--blue);">
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(232,100,10,0.1);border:1px solid var(--border);border-radius:20px;padding:3px 10px 3px 8px;font-size:11px;color:var(--orange-dim);">
       <span>${fileIcon(f.name)}</span>
       <span>${f.name}</span>
       <span onclick="removeFile('${f.name}')" style="cursor:pointer;color:var(--muted);margin-left:2px;font-size:13px;">✕</span>
@@ -1059,7 +1074,7 @@ function addProtocolLine(prefill) {
   const row = document.createElement('div');
   row.className = 'protocol-line';
   row.id = 'pline_' + n;
-  row.style = 'display:grid;grid-template-columns:90px 1fr 70px 70px 100px 28px;gap:6px;align-items:end;margin-bottom:6px;padding:6px;background:var(--blue-light);border-radius:6px;';
+  row.style = 'display:grid;grid-template-columns:90px 1fr 70px 70px 100px 28px;gap:6px;align-items:end;margin-bottom:6px;padding:6px;background:rgba(232,100,10,0.1);border-radius:6px;';
   row.innerHTML = `
     <div>
       <select id="pl_method_${n}" style="width:100%;padding:5px 6px;border:1px solid var(--border);border-radius:5px;font-family:var(--font);font-size:12px;background:white;color:#1a2a3a">
@@ -1424,13 +1439,13 @@ function confirmMarkDone(id) {
   const otherEngineers = engineers.filter(e => e.email.toLowerCase() !== currentUser.username.toLowerCase());
   const engCheckboxes = otherEngineers.map(e =>
     `<label style="display:flex;align-items:center;gap:7px;font-size:12px;padding:4px 0;cursor:pointer;">
-      <input type="checkbox" class="atlikejai_cb" value="${e.name}|${e.role}" style="accent-color:var(--blue);width:14px;height:14px;flex-shrink:0;">
+      <input type="checkbox" class="atlikejai_cb" value="${e.name}|${e.role}" style="accent-color:var(--orange-dim);width:14px;height:14px;flex-shrink:0;">
       <span>${e.name} <span style="color:var(--muted);font-size:11px;">· ${e.role}</span></span>
     </label>`
   ).join('');
 
   det.innerHTML = `
-    <div style="text-align:left;margin-bottom:10px;font-size:13px;color:var(--text);font-weight:600">${job.orderNo} · ${job.object}</div>
+    <div style="text-align:left;margin-bottom:10px;font-size:13px;color:var(--ink);font-weight:600">${job.orderNo} · ${job.object}</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;text-align:left">
       <div>
@@ -1454,7 +1469,7 @@ function confirmMarkDone(id) {
     <div style="margin-top:14px;text-align:left">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Protokolo eilutės</div>
-        <button type="button" onclick="addProtocolLine()" style="font-family:var(--font);font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--blue-accent);border-radius:6px;background:var(--white);color:var(--blue-accent);cursor:pointer;">+ Eilutė</button>
+        <button type="button" onclick="addProtocolLine()" style="font-family:var(--font);font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--orange-dim);border-radius:6px;background:var(--surface);color:var(--orange-dim);cursor:pointer;">+ Eilutė</button>
       </div>
       <div style="display:grid;grid-template-columns:90px 1fr 70px 70px 100px 28px;gap:6px;margin-bottom:4px;">
         <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase">Metodas</div>
@@ -1469,10 +1484,10 @@ function confirmMarkDone(id) {
 
     <div id="defektas_row" style="display:none;margin-top:10px;text-align:left">
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Defektas <span style="color:#e05252">*</span></div>
-      <div id="defektas_checkboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;background:var(--blue-light);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;">
+      <div id="defektas_checkboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;background:rgba(232,100,10,0.1);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;">
         ${['Šlakai, Purslai (Apvalymas)','Perteklinis įvirinimas, Restartai','Nepravirinimai, nesulydymai','Įpjovos','Poros','Nepakankamas užpildymas','Įpjovimai, mech. pažeidimai','Netinkami siūlės kraštai (Perėjimai)','Šaknies įdubimai','Įtrūkiai','Pradeginimai','Siūlės asimetrija','Briaunų nesutapimas'].map(d =>
           `<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0">
-            <input type="checkbox" class="defektas_cb" value="${d}" style="accent-color:var(--blue);width:13px;height:13px;flex-shrink:0;" onchange="if(this.checked){const b=document.getElementById('defektas_checkboxes');if(b)b.style.border='1px solid var(--border)'}">
+            <input type="checkbox" class="defektas_cb" value="${d}" style="accent-color:var(--orange-dim);width:13px;height:13px;flex-shrink:0;" onchange="if(this.checked){const b=document.getElementById('defektas_checkboxes');if(b)b.style.border='1px solid var(--border)'}">
             <span>${d}</span>
           </label>`).join('')}
       </div>
@@ -1480,16 +1495,16 @@ function confirmMarkDone(id) {
 
     <div style="margin-top:10px;text-align:left">
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Atlikėjai</div>
-      <div style="background:var(--blue-light);border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;margin-bottom:6px;font-size:12px;display:flex;align-items:center;gap:8px">
+      <div style="background:rgba(232,100,10,0.1);border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;margin-bottom:6px;font-size:12px;display:flex;align-items:center;gap:8px">
         <span style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;white-space:nowrap">Atlikėjas 1</span>
-        <span style="color:var(--text)">${currentUser.name || currentUser.username}</span>
+        <span style="color:var(--ink)">${currentUser.name || currentUser.username}</span>
       </div>
       ${otherEngineers.length > 0 ? `<div>
-        <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer;margin-bottom:6px;color:var(--blue-accent);font-weight:600">
-          <input type="checkbox" id="toggle_papildomi" style="accent-color:var(--blue);width:14px;height:14px;" onchange="document.getElementById('papildomi_list').style.display=this.checked?'block':'none'">
+        <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer;margin-bottom:6px;color:var(--orange-dim);font-weight:600">
+          <input type="checkbox" id="toggle_papildomi" style="accent-color:var(--orange-dim);width:14px;height:14px;" onchange="document.getElementById('papildomi_list').style.display=this.checked?'block':'none'">
           + Pridėti papildomus atlikėjus
         </label>
-        <div id="papildomi_list" style="display:none;background:var(--blue-light);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;max-height:120px;overflow-y:auto;">
+        <div id="papildomi_list" style="display:none;background:rgba(232,100,10,0.1);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;max-height:120px;overflow-y:auto;">
           ${engCheckboxes}
         </div>
       </div>` : ''}
@@ -1503,14 +1518,14 @@ function confirmMarkDone(id) {
     <div style="margin-top:10px;text-align:left">
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Failai / Files</div>
       <div id="dropzone"
-        style="border:2px dashed var(--blue-accent);border-radius:8px;padding:18px 16px;text-align:center;cursor:pointer;background:var(--blue-light);transition:all .15s;"
-        ondragover="event.preventDefault();this.style.background='#d0e4f5';this.style.borderColor='var(--blue)'"
-        ondragleave="this.style.background='var(--blue-light)';this.style.borderColor='var(--blue-accent)'"
-        ondrop="event.preventDefault();this.style.background='var(--blue-light)';this.style.borderColor='var(--blue-accent)';handleDrop(event)">
+        style="border:2px dashed var(--orange-dim);border-radius:8px;padding:18px 16px;text-align:center;cursor:pointer;background:rgba(232,100,10,0.1);transition:all .15s;"
+        ondragover="event.preventDefault();this.style.background='rgba(232,100,10,0.18)';this.style.borderColor='var(--orange-dim)'"
+        ondragleave="this.style.background='rgba(232,100,10,0.1)';this.style.borderColor='var(--orange-dim)'"
+        ondrop="event.preventDefault();this.style.background='rgba(232,100,10,0.1)';this.style.borderColor='var(--orange-dim)';handleDrop(event)">
         <div style="font-size:22px;margin-bottom:6px">☁️</div>
-        <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:6px">Vilkite failus čia arba</div>
+        <div style="font-size:12px;font-weight:600;color:var(--orange-dim);margin-bottom:6px">Vilkite failus čia arba</div>
         <button type="button" onclick="document.getElementById('complete_files').click()"
-          style="font-family:var(--font);font-size:12px;font-weight:600;padding:6px 16px;border:2px solid var(--blue-accent);border-radius:var(--radius);background:var(--white);color:var(--blue-accent);cursor:pointer;">
+          style="font-family:var(--font);font-size:12px;font-weight:600;padding:6px 16px;border:2px solid var(--orange-dim);border-radius:var(--radius);background:var(--surface);color:var(--orange-dim);cursor:pointer;">
           Pasirinkti failus
         </button>
         <div style="font-size:10px;color:var(--muted);margin-top:8px">PDF, JPG, PNG, Word, Excel</div>
@@ -1561,6 +1576,19 @@ async function confirmAssignExec(id) {
     setTimeout(() => loadData(), 2000);
   } catch(e) { showToast('Klaida: '+e.message,'error'); }
 }
+
+// Theme — shared across all 3 pages via localStorage
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem('mbl-theme', theme);
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+applyTheme(localStorage.getItem('mbl-theme') || 'light');
 
 initAuth();
 </script>

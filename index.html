@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MBL – Darbų valdymas</title>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.10.0/lib/msal-browser.min.js"></script>
 <style>
 :root {
   --navy:#0f1f2e;--navy2:#162840;--navy3:#1e3a54;
@@ -137,9 +138,38 @@ body{
   .cards{grid-template-columns:1fr;}
   .footer{padding:14px 20px;flex-direction:column;gap:4px;text-align:center;}
 }
+/* Login overlay */
+.login-overlay{position:fixed;inset:0;background:var(--navy);z-index:200;display:flex;align-items:center;justify-content:center;}
+.login-overlay.hidden{display:none;}
+.login-card{background:var(--navy2);border:1px solid var(--border);border-radius:12px;padding:40px 48px;text-align:center;max-width:380px;width:90%;}
+.login-logo{width:48px;height:48px;background:linear-gradient(135deg,var(--orange),var(--orange2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;margin:0 auto 16px;box-shadow:0 2px 12px rgba(232,100,10,0.4);}
+.login-card h2{font-size:18px;color:var(--white);margin-bottom:6px;font-weight:600;}
+.login-card p{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+.btn-ms{display:flex;align-items:center;gap:10px;background:#0078d4;color:#fff;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:500;cursor:pointer;width:100%;justify-content:center;font-family:var(--font);transition:background .15s;}
+.btn-ms:hover{background:#006cbd;}
+.btn-ms svg{flex-shrink:0;}
+
+/* User pill in header */
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 4px;}
+.user-avatar{width:24px;height:24px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
+.user-name{font-size:12px;color:var(--text);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.btn-logout{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 4px;}
+.btn-logout:hover{color:var(--white);}
 </style>
 </head>
 <body>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo">MBL</div>
+    <h2>Darbų valdymo sistema</h2>
+    <p>Prisijunkite su savo Iremas Microsoft paskyra, kad galėtumėte naudotis sistema.</p>
+    <button class="btn-ms" onclick="signIn()">
+      <svg width="20" height="20" viewBox="0 0 21 21" fill="none"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+      Prisijungti su Microsoft
+    </button>
+  </div>
+</div>
 
 <div class="header">
   <div class="logo">
@@ -149,9 +179,16 @@ body{
       <div class="logo-sub">Metalų bandymų laboratorija</div>
     </div>
   </div>
-  <div class="header-meta">
-    MBL-F-27 · Rev. 06<br>
-    Achemos Grupė
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="header-meta">
+      MBL-F-27 · Rev. 06<br>
+      Achemos Grupė
+    </div>
+    <div class="user-pill" id="userBadge" style="display:none;">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <span class="user-name" id="userName">...</span>
+      <button class="btn-logout" onclick="signOut()" title="Atsijungti">✕</button>
+    </div>
   </div>
 </div>
 
@@ -192,5 +229,61 @@ body{
   <span><span class="footer-accent">MBL</span> · Metalų bandymų laboratorija</span>
 </div>
 
+<script>
+const CLIENT_ID = '18788fe0-90e8-4c79-8813-9f96ee80b6ab';
+const TENANT_ID = 'f300c84f-87f0-4d9e-8284-1e36dbe06fbe';
+// Broadest scope set — covers form.html (User.Read) and assign.html (SharePoint) needs.
+// Both pages can later acquireTokenSilent for whichever subset they need, no extra popup.
+const SCOPES = ['User.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Read', 'https://achemosgrupelt.sharepoint.com/AllSites.Write'];
+
+const msalConfig = {
+  auth: {
+    clientId: CLIENT_ID,
+    authority: `https://login.microsoftonline.com/${TENANT_ID}`,
+    redirectUri: 'https://vkmitas.github.io/ndt-form/'
+  },
+  cache: { cacheLocation: 'sessionStorage' }
+};
+const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+async function initAuth() {
+  await msalInstance.initialize();
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length > 0) {
+    setUser(accounts[0]);
+  } else {
+    document.getElementById('loginOverlay').classList.remove('hidden');
+  }
+}
+
+function setUser(account) {
+  window.currentUser = { name: account.name, username: account.username };
+  document.getElementById('loginOverlay').classList.add('hidden');
+  const initials = account.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('userAvatar').textContent = initials;
+  document.getElementById('userName').textContent = account.name;
+  document.getElementById('userBadge').style.display = 'flex';
+}
+
+async function signIn() {
+  try {
+    const resp = await msalInstance.loginPopup({ scopes: SCOPES });
+    setUser(resp.account);
+  } catch (e) {
+    console.error('Login failed:', e);
+    alert('Prisijungti nepavyko: ' + e.message);
+  }
+}
+
+function signOut() {
+  const account = msalInstance.getAllAccounts()[0];
+  if (account) msalInstance.logoutPopup({ account });
+  window.currentUser = null;
+  document.getElementById('userBadge').style.display = 'none';
+  document.getElementById('loginOverlay').classList.remove('hidden');
+}
+
+initAuth();
+</script>
 </body>
 </html>

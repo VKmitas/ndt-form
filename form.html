@@ -205,7 +205,7 @@
 <div class="section">
   <div class="sec-head"><div class="sec-num">1</div><div class="sec-title">Užsakymo informacija / Order Information</div></div>
   <div class="sec-body">
-    <div class="grid3" style="margin-bottom:14px;">
+    <div class="grid2" style="margin-bottom:14px;">
       <div class="field">
         <label>Iremo Užs. Nr. <span class="req">*</span><br><span class="lt">Iremas Order No</span></label>
         <input type="text" id="f_orderNo" placeholder="I-______" required>
@@ -214,11 +214,8 @@
         <label>Padalinio Užs. Nr. <span class="req">*</span><br><span class="lt">Shop Internal No</span></label>
         <input type="text" id="f_shopNo" placeholder="pvz. 877" required>
       </div>
-      <div class="field">
-        <label>Paraiška Nr.<br><span class="lt">Application No</span></label>
-        <input type="text" id="f_appNo" value="Sugeneruojama automatiškai" readonly style="background:var(--blue-light);color:var(--muted);cursor:not-allowed;font-style:italic;">
-      </div>
     </div>
+    <input type="hidden" id="f_appNo" value="">
     <div class="grid2" style="margin-bottom:14px;">
       <div class="field">
         <label>Užsakovas <span class="req">*</span><br><span class="lt">Customer</span></label>
@@ -973,7 +970,7 @@ async function submitForm(){
 
     if(resp.ok || resp.status === 202){
       showToast('✓ Paraiška sėkmingai pateikta!','success');
-      clearForm();
+      setTimeout(() => window.location.reload(), 1200);
     } else {
       throw new Error('HTTP ' + resp.status + ' ' + resp.statusText);
     }
